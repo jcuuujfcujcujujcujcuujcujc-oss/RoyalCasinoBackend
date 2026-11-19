@@ -1,0 +1,16 @@
+flowchart LR
+  subgraph Anatomy["Устройство модуля"]
+    R["*.routes.js"] --> C["*.controller.js"]
+    C --> V["*.validation.js"]
+    C --> S["*.service.js"]
+    S --> M["*.model.js"]
+    S --> T["sequelize.transaction"]
+  end
+
+  R --> Registry["src/routes/index.js<br/>подключение маршрутов"]
+  M --> Registry2["src/models/index.js<br/>регистрация и ассоциации"]
+  S --> DB[("PostgreSQL<br/>схема задаётся миграциями")]
+  Registry --> App["src/app.js"]
+  Registry2 --> App
+
+  New["Добавление сущности:<br/>1 модель + 1 миграция<br/>1 валидация + 1 сервис<br/>1 контроллер + 1 маршрутизатор<br/>2 строки регистрации"] -.-> Anatomy

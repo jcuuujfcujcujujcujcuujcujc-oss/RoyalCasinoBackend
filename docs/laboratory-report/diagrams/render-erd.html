@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Entity Relationship Diagram</title>
+<style>
+html,body{margin:0;padding:0;background:#fff}
+body{font-family:"Segoe UI",Arial,sans-serif;padding:28px 32px}
+.caption{font-size:18px;color:#222;margin:0 0 18px;font-weight:600}
+#diagram{width:1500px}
+#diagram svg{max-width:100%;height:auto}
+</style>
+<script src="vendor/mermaid.min.js"></script></head>
+<body>
+<div class="caption">Entity Relationship Diagram</div>
+<div id="diagram"></div>
+<script>
+const def = "erDiagram\n  GAME_CATEGORIES ||--o{ PRODUCTS : \"category_id (ON DELETE RESTRICT)\"\n  PLAYERS ||--o| PLAYER_CREDIT_PROFILES : \"player_id (ON DELETE CASCADE)\"\n\n  GAME_CATEGORIES {\n    int id PK\n    varchar name \"unique lower(name)\"\n    text description\n    boolean is_active\n    timestamptz created_at\n    timestamptz updated_at\n  }\n\n  PRODUCTS {\n    int id PK\n    varchar name\n    text description\n    varchar category \"legacy slug, CHECK 8 values\"\n    varchar provider \"default Unknown\"\n    varchar volatility \"LOW | MEDIUM | HIGH\"\n    int category_id FK \"nullable, RESTRICT\"\n    numeric min_bet\n    numeric max_bet\n    numeric rtp \"0..100\"\n    int tables_count\n    boolean is_active\n    timestamptz created_at\n    timestamptz updated_at\n  }\n\n  PLAYERS {\n    int id PK\n    varchar nickname \"unique lower(nickname), 3..30\"\n    varchar email \"unique, lowercase CHECK\"\n    boolean is_active\n    timestamptz created_at\n    timestamptz updated_at\n  }\n\n  PLAYER_CREDIT_PROFILES {\n    int id PK\n    int player_id FK \"unique\"\n    numeric balance \">= 0, starter 1000\"\n    timestamptz created_at\n    timestamptz updated_at\n  }\n";
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict',
+  fontFamily: 'Segoe UI, Arial, sans-serif',
+  flowchart: { htmlLabels: true, curve: 'basis', useMaxWidth: true },
+  sequence: { useMaxWidth: true }, er: { useMaxWidth: true } });
+(async () => {
+  const { svg } = await mermaid.render('diagram-svg', def);
+  document.getElementById('diagram').innerHTML = svg;
+  window.__rendered = true;
+  document.title = 'ready';
+})().catch((e) => { document.body.innerHTML = '<pre>' + e.stack + '</pre>'; });
+</script></body></html>

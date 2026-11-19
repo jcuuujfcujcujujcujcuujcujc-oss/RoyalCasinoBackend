@@ -1,0 +1,46 @@
+{
+  "name": "universal-backend",
+  "version": "1.0.0",
+  "description": "Royal Casino Backend: учебный каталог казино-игр и система управления игроками (только виртуальные кредиты): Express 5 + Sequelize 6 + PostgreSQL",
+  "main": "src/server.js",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:migrate:undo:all": "sequelize-cli db:migrate:undo:all",
+    "db:migrate:status": "sequelize-cli db:migrate:status",
+    "db:create": "sequelize-cli db:create",
+    "admin:bootstrap": "node src/scripts/bootstrap-admin.js",
+    "test:unit": "node --test tests/*.test.js",
+    "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.7.5",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.13.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.3"
+  },
+  "overrides": {
+    "sequelize": {
+      "uuid": "^11.1.1"
+    },
+    "glob": "^14.0.2",
+    "minimatch": "^11.0.1"
+  }
+}

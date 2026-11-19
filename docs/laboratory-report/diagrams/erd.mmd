@@ -1,0 +1,46 @@
+erDiagram
+  GAME_CATEGORIES ||--o{ PRODUCTS : "category_id (ON DELETE RESTRICT)"
+  PLAYERS ||--o| PLAYER_CREDIT_PROFILES : "player_id (ON DELETE CASCADE)"
+
+  GAME_CATEGORIES {
+    int id PK
+    varchar name "unique lower(name)"
+    text description
+    boolean is_active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  PRODUCTS {
+    int id PK
+    varchar name
+    text description
+    varchar category "legacy slug, CHECK 8 values"
+    varchar provider "default Unknown"
+    varchar volatility "LOW | MEDIUM | HIGH"
+    int category_id FK "nullable, RESTRICT"
+    numeric min_bet
+    numeric max_bet
+    numeric rtp "0..100"
+    int tables_count
+    boolean is_active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  PLAYERS {
+    int id PK
+    varchar nickname "unique lower(nickname), 3..30"
+    varchar email "unique, lowercase CHECK"
+    boolean is_active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  PLAYER_CREDIT_PROFILES {
+    int id PK
+    int player_id FK "unique"
+    numeric balance ">= 0, starter 1000"
+    timestamptz created_at
+    timestamptz updated_at
+  }

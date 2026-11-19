@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Architecture of Royal Casino Backend</title>
+<style>
+html,body{margin:0;padding:0;background:#fff}
+body{font-family:"Segoe UI",Arial,sans-serif;padding:28px 32px}
+.caption{font-size:18px;color:#222;margin:0 0 18px;font-weight:600}
+#diagram{width:1500px}
+#diagram svg{max-width:100%;height:auto}
+</style>
+<script src="vendor/mermaid.min.js"></script></head>
+<body>
+<div class="caption">Architecture of Royal Casino Backend</div>
+<div id="diagram"></div>
+<script>
+const def = "flowchart TB\n  Client[\"HTTP client (JSON)\"] --> App[\"src/app.js<br/>Express 5 application\"]\n  App --> MW[\"Middleware<br/>security headers, express.json (100 kb)\"]\n  MW --> Routes[\"src/routes/index.js<br/>route composition\"]\n  Routes --> Prod[\"/api/games | /api/products\"]\n  Routes --> Cat[\"/api/categories | /api/game-categories\"]\n  Routes --> Play[\"/api/players\"]\n  Routes --> Stat[\"/api/casino/statistics\"]\n  subgraph Modules[\"Feature modules (controller -> service -> model)\"]\n    Prod --> PC[\"product.controller.js\"] --> PS[\"product.service.js\"] --> PM[\"Product model\"]\n    Cat --> CC[\"gameCategory.controller.js\"] --> CS[\"gameCategory.service.js\"] --> CM[\"GameCategory model\"]\n    Play --> PLC[\"player.controller.js\"] --> PLS[\"player.service.js\"] --> PLM[\"Player model\"]\n    Play --> CRC[\"credit.controller.js\"] --> CRS[\"credit.service.js\"] --> CRM[\"PlayerCreditProfile model\"]\n    Stat --> SC[\"statistics.controller.js\"] --> SS[\"statistics.service.js\"] --> SQ[\"statistics.queries.js<br/>static SQL\"]\n  end\n  PM --> DB[(\"PostgreSQL 15<br/>products, game_categories, players,<br/>player_credit_profiles\")]\n  CM --> DB\n  PLM --> DB\n  CRM --> DB\n  SQ --> DB\n  PS -. \"AppError / Sequelize errors\" .-> EH[\"src/middleware/errorHandler.js<br/>HTTP error mapping\"]\n  CS -.-> EH\n  PLS -.-> EH\n";
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict',
+  fontFamily: 'Segoe UI, Arial, sans-serif',
+  flowchart: { htmlLabels: true, curve: 'basis', useMaxWidth: true },
+  sequence: { useMaxWidth: true }, er: { useMaxWidth: true } });
+(async () => {
+  const { svg } = await mermaid.render('diagram-svg', def);
+  document.getElementById('diagram').innerHTML = svg;
+  window.__rendered = true;
+  document.title = 'ready';
+})().catch((e) => { document.body.innerHTML = '<pre>' + e.stack + '</pre>'; });
+</script></body></html>

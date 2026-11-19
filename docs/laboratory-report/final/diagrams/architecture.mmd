@@ -1,0 +1,30 @@
+flowchart TB
+  Client["HTTP-клиент<br/>(JSON, REST)"] --> PHead
+
+  subgraph P[" "]
+    PHead["Уровень представления"]
+    PHead --> App["src/app.js<br/>Express 5: защитные заголовки,<br/>express.json (100 КБ), маршруты"]
+    App --> Router["src/routes/index.js<br/>/api/games, /api/categories,<br/>/api/players, /api/casino/statistics"]
+    Router --> Ctrl["Контроллеры<br/>разбор id, вызов валидации,<br/>формирование HTTP-ответа"]
+  end
+
+  Ctrl --> BHead
+
+  subgraph B[" "]
+    BHead["Уровень бизнес-логики"]
+    BHead --> Val["Валидация<br/>*.validation.js<br/>белый список, типы, диапазоны"]
+    BHead --> Svc["Сервисы<br/>*.service.js<br/>правила, транзакции, блокировки"]
+  end
+
+  Svc --> DHead
+
+  subgraph D[" "]
+    DHead["Уровень доступа к данным"]
+    DHead --> Model["Модели Sequelize<br/>Product, GameCategory,<br/>Player, PlayerCreditProfile"]
+    DHead --> SQL["statistics.queries.js<br/>статические SQL-запросы"]
+    Model --> DB[("PostgreSQL 15.15")]
+    SQL --> DB
+  end
+
+  Val -. "AppError" .-> EH["src/middleware/errorHandler.js<br/>единое отображение ошибок<br/>в коды 400–503"]
+  Svc -. "ошибки Sequelize" .-> EH

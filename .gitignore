@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+npm-debug.log*
+logs/
+*.log
+coverage/
+.DS_Store
+.idea/
+.vscode/
+tmp-api-demo.js
+tmp-dbg.js
+tmp-probe.js
+docs/laboratory-report/final/Отчет_лабораторная_RoyalCasinoBackend.docx

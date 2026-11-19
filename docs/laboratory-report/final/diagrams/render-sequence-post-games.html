@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>sequence-post-games</title>
+<style>
+html,body{margin:0;padding:0;background:#ffffff}
+body{font-family:"Segoe UI",Arial,sans-serif;padding:0}
+#diagram{width:1150px;background:#ffffff}
+#diagram svg{display:block;max-width:none;height:auto}
+</style>
+<script src="./vendor/mermaid.min.js"></script></head>
+<body>
+<div id="diagram"></div>
+<script>
+const def = "sequenceDiagram\n  autonumber\n  participant Client as HTTP-клиент\n  participant API as Express: маршрут,<br/>контроллер, валидация\n  participant Svc as product.service.js\n  participant DB as PostgreSQL\n\n  Client->>API: POST /api/games (JSON)\n  API->>API: validateCreate: белый список полей,<br/>типы, диапазоны, minBet <= maxBet\n\n  alt Некорректные данные\n    API-->>Client: 422 VALIDATION_ERROR<br/>(через errorHandler)\n  else Данные корректны\n    API->>Svc: create(нормализованные данные)\n    Svc->>DB: BEGIN, поиск категории по categoryId\n    DB-->>Svc: строка категории либо null\n    Svc->>DB: INSERT INTO products ... RETURNING *<br/>(в транзакции, fields = белый список)\n    DB-->>Svc: сохранённая строка\n    Svc->>DB: COMMIT\n    Svc-->>API: созданная игра\n    API-->>Client: 201 Created + Location: /api/games/{id}\n  end\n";
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict',
+  fontFamily: 'Segoe UI, Arial, sans-serif', fontSize: 16,
+  flowchart: { htmlLabels: true, curve: 'basis', useMaxWidth: false },
+  sequence: { useMaxWidth: false, wrap: false },
+  er: { useMaxWidth: false, minEntityWidth: 130, entityPadding: 14 } });
+(async () => {
+  const { svg } = await mermaid.render('diagram-svg', def);
+  document.getElementById('diagram').innerHTML = svg;
+  window.__rendered = true;
+  document.title = 'ready';
+})().catch((e) => { document.body.innerHTML = '<pre>' + e.stack + '</pre>'; document.title = 'error'; });
+</script></body></html>

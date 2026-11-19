@@ -1,0 +1,30 @@
+sequenceDiagram
+  autonumber
+  participant Client as HTTP client
+  participant Router as product.routes.js
+  participant Ctrl as product.controller.js
+  participant Val as product.validation.js
+  participant Svc as product.service.js
+  participant Model as Product (Sequelize)
+  participant DB as PostgreSQL
+
+  Client->>Router: POST /api/games (JSON body)
+  Router->>Ctrl: create(req, res)
+  Ctrl->>Val: validateCreate(req.body)
+  Val->>Val: whitelist + field rules + minBet <= maxBet
+  alt invalid payload
+    Val-->>Ctrl: ValidationError (422)
+    Ctrl-->>Client: errorHandler -> 422 VALIDATION_ERROR
+  else valid payload
+    Val-->>Ctrl: normalized data
+    Ctrl->>Svc: create(data)
+    Svc->>DB: BEGIN, then SELECT game_categories by categoryId
+    DB-->>Svc: category row (or none)
+    Svc->>Model: Product.create(prepared, { fields, transaction })
+    Model->>DB: INSERT INTO products ... RETURNING *
+    DB-->>Model: inserted row
+    Model-->>Svc: Product instance
+    Svc->>DB: COMMIT
+    Svc-->>Ctrl: product
+    Ctrl-->>Client: 201 Created + Location: /api/games/{id}
+  end

@@ -1,0 +1,22 @@
+sequenceDiagram
+  autonumber
+  participant Client as HTTP-клиент
+  participant API as Express: маршрут,<br/>контроллер, валидация
+  participant Svc as product.service.js
+  participant DB as PostgreSQL
+
+  Client->>API: POST /api/games (JSON)
+  API->>API: validateCreate: белый список полей,<br/>типы, диапазоны, minBet <= maxBet
+
+  alt Некорректные данные
+    API-->>Client: 422 VALIDATION_ERROR<br/>(через errorHandler)
+  else Данные корректны
+    API->>Svc: create(нормализованные данные)
+    Svc->>DB: BEGIN, поиск категории по categoryId
+    DB-->>Svc: строка категории либо null
+    Svc->>DB: INSERT INTO products ... RETURNING *<br/>(в транзакции, fields = белый список)
+    DB-->>Svc: сохранённая строка
+    Svc->>DB: COMMIT
+    Svc-->>API: созданная игра
+    API-->>Client: 201 Created + Location: /api/games/{id}
+  end

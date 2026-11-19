@@ -1,0 +1,14 @@
+flowchart LR
+  subgraph Anatomy["Standard module anatomy"]
+    R["*.routes.js"] --> C["*.controller.js"]
+    C --> V["*.validation.js"]
+    C --> S["*.service.js"]
+    S --> M["*.model.js"]
+    S --> T["sequelize.transaction"]
+  end
+  R --> Registry["src/routes/index.js"]
+  M --> Registry2["src/models/index.js<br/>associations"]
+  S --> DB[("PostgreSQL<br/>migrations define the schema")]
+  Registry --> App["src/app.js"]
+  Registry2 --> App
+  New["New module checklist:<br/>1 model + 1 migration<br/>1 validation + 1 service<br/>1 controller + 1 router<br/>mount in routes/index.js<br/>register model in models/index.js"] -.-> Anatomy

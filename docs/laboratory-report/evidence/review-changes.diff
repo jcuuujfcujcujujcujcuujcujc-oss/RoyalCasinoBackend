@@ -1,0 +1,132 @@
+﻿git : warning: in the working copy of 'before/package.json', LF will be replaced by CRLF the next time Git touches it
+строка:14 знак:1
++ git diff --no-index --unified=2 -- before after 2>&1 | Out-File -File ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of 'after/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'before/tests/api.test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'after/tests/api.test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'before/tests/helpers/db.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'after/tests/helpers/db.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'before/tests/integration/casino.integration.test.js', LF will be replaced by CRLF the 
+next time Git touches it
+warning: in the working copy of 'after/tests/integration/casino.integration.test.js', LF will be replaced by CRLF the n
+ext time Git touches it
+diff --git a/before/package.json b/after/package.json
+index b047e8e..a1a04d6 100644
+--- a/before/package.json
++++ b/after/package.json
+@@ -11,5 +11,5 @@
+     "start": "node src/server.js",
+     "dev": "node --watch src/server.js",
+-    "test": "node --test \"tests/**/*.test.js\"",
++    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+     "db:migrate": "sequelize-cli db:migrate",
+     "db:migrate:undo": "sequelize-cli db:migrate:undo",
+@@ -18,5 +18,5 @@
+     "db:create": "sequelize-cli db:create",
+     "test:unit": "node --test tests/*.test.js",
+-    "test:integration": "NODE_ENV=test node --test tests/integration/*.test.js"
++    "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js"
+   },
+   "dependencies": {
+diff --git a/before/tests/api.test.js b/after/tests/api.test.js
+index db6eeea..1ebd02e 100644
+--- a/before/tests/api.test.js
++++ b/after/tests/api.test.js
+@@ -61,5 +61,7 @@ test('POST /api/products ╤Б ╨┐╤Г╤Б╤В╤Л╨╝ ╤В╨╡╨╗╨╛╨╝ -> 422, 5 ╨╛╨▒╤П╨╖╨░╤В╨╡╨╗╤М
+ 
+ test('POST /api/products ╤Б ╨╜╨╡╨╕╨╖╨▓╨╡╤Б╤В╨╜╨╛╨╣ ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╡╨╣ -> 422', async () => {
+-  const res = await send('POST', '/api/products', { ...validGame, category: 'lottery' });
++  // 'lottery' ╨┤╨╛╨▒╨░╨▓╨╗╨╡╨╜ ╨▓ CATEGORIES ╨╜╨░ ╤Н╤В╨░╨┐╨╡ Royal Casino, ╨┐╨╛╤Н╤В╨╛╨╝╤Г ╨╜╨╡╨╕╨╖╨▓╨╡╤Б╤В╨╜╤Л╨╝
++  // ╨┤╨╛╨╗╨╢╨╡╨╜ ╨▒╤Л╤В╤М ╤Б╨╗╨░╨│, ╨║╨╛╤В╨╛╤А╨╛╨│╨╛ ╨┤╨╡╨╣╤Б╤В╨▓╨╕╤В╨╡╨╗╤М╨╜╨╛ ╨╜╨╡╤В ╨▓ ╨▒╨╡╨╗╨╛╨╝ ╤Б╨┐╨╕╤Б╨║╨╡.
++  const res = await send('POST', '/api/products', { ...validGame, category: 'bingo' });
+   assert.equal(res.status, 422);
+ });
+@@ -124,8 +126,10 @@ test('GET /api/products?categoryId=abc -> 422; POST ╤Б categoryId=0 -> 422', asy
+ });
+ 
+-test('body-parser: ╨╜╨╡╨┐╨╛╨┤╨┤╨╡╤А╨╢╨╕╨▓╨░╨╡╨╝╨░╤П ╨║╨╛╨┤╨╕╤А╨╛╨▓╨║╨░ -> 4xx, ╨░ ╨╜╨╡ 500', async () => {
++test('body-parser: ╨╜╨╡╨┐╨╛╨┤╨┤╨╡╤А╨╢╨╕╨▓╨░╨╡╨╝╨░╤П ╨║╨╛╨┤╨╕╤А╨╛╨▓╨║╨░ -> 415, ╨░ ╨╜╨╡ 500', async () => {
++  // charset=utf-7 ╨┐╨╛╨┤╨┤╨╡╤А╨╢╨╕╨▓╨░╨╡╤В╤Б╤П iconv-lite, ╨┐╨╛╤Н╤В╨╛╨╝╤Г ╤В╨╡╨╗╨╛ ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤А╨░╨╖╨▒╨╕╤А╨░╨╗╨╛╤Б╤М ╨╕
++  // ╨╖╨░╨┐╤А╨╛╤Б ╨┤╨╛╤Е╨╛╨┤╨╕╨╗ ╨┤╨╛ ╨▓╨░╨╗╨╕╨┤╨░╤Ж╨╕╨╕ (422). ╨С╨╡╤А╤С╨╝ ╨║╨╛╨┤╨╕╤А╨╛╨▓╨║╤Г, ╨║╨╛╤В╨╛╤А╨╛╨╣ ╨╜╨╡╤В ╨▓ iconv-lite.
+   const res = await fetch(`${baseUrl}/api/products`, {
+     method: 'POST',
+-    headers: { 'Content-Type': 'application/json; charset=utf-7' },
++    headers: { 'Content-Type': 'application/json; charset=x-unknown-8bit' },
+     body: '{}',
+   });
+diff --git a/before/tests/helpers/db.js b/after/tests/helpers/db.js
+index 596b08c..ccf1e02 100644
+--- a/before/tests/helpers/db.js
++++ b/after/tests/helpers/db.js
+@@ -5,4 +5,6 @@
+ // ╨╕ ╨╛╤З╨╕╤Й╨░╤О╤В ╨▓ ╨╜╨╡╨╣ ╤В╨░╨▒╨╗╨╕╤Ж╤Л. ╨Ш╨╜╨░╤З╨╡ (╨╕╨╗╨╕ ╨╡╤Б╨╗╨╕ ╨С╨Ф/╨╝╨╕╨│╤А╨░╤Ж╨╕╨╕ ╨╜╨╡╨┤╨╛╤Б╤В╤Г╨┐╨╜╤Л) ╤В╨╡╤Б╤В╤Л ╨┐╤А╨╛╨┐╤Г╤Б╨║╨░╤О╤В╤Б╤П.
+ 
++const { CATEGORIES } = require('../../src/modules/products/product.validation');
++
+ const TABLES = ['products', 'game_categories', 'players', 'player_credit_profiles'];
+ 
+@@ -20,9 +22,16 @@ async function connect() {
+     const { sequelize } = require('../../src/models');
+     await sequelize.authenticate();
+-    const [rows] = await sequelize.query(
+-      "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('products','game_categories','players','player_credit_profiles')"
+-    );
+-    if (rows.length !== TABLES.length) {
+-      return { ok: false, reason: '╨╝╨╕╨│╤А╨░╤Ж╨╕╨╕ ╨╜╨╡ ╨┐╤А╨╕╨╝╨╡╨╜╨╡╨╜╤Л ╨║ ╤В╨╡╤Б╤В╨╛╨▓╨╛╨╣ ╨С╨Ф (npm run db:migrate ╨┐╤А╨╕ NODE_ENV=test)' };
++    // showAllTables() ╨▓╨╛╨╖╨▓╤А╨░╤Й╨░╨╡╤В ╨╕╨╝╨╡╨╜╨░ ╤В╨░╨▒╨╗╨╕╤Ж ╤В╨╡╨║╤Г╤Й╨╡╨╣ ╤Б╤Е╨╡╨╝╤Л. ╨а╨░╨╜╤М╤И╨╡ ╨╖╨┤╨╡╤Б╤М ╨▓╤Л╨┐╨╛╨╗╨╜╤П╨╗╤Б╤П
++    // SELECT table_name ... ╨╕ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В ╤А╨░╨╖╨▒╨╕╤А╨░╨╗╤Б╤П ╨║╨░╨║ [rows]; ╨┤╨╗╤П ╨╛╨┤╨╜╨╛╨║╨╛╨╗╨╛╨╜╨╛╤З╨╜╨╛╨│╨╛
++    // ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨░ ╤В╨╕╨┐╨░ sql_identifier Sequelize ╨▓╨╛╨╖╨▓╤А╨░╤Й╨░╨╡╤В ╨╝╨░╤Б╤Б╨╕╨▓ ╤Б╤В╤А╨╛╨║-╨╝╨░╤Б╤Б╨╕╨▓╨╛╨▓,
++    // ╨┐╨╛╤Н╤В╨╛╨╝╤Г ╨┐╤А╨╛╨▓╨╡╤А╨║╨░ ╨▓╤Б╨╡╨│╨┤╨░ ╨▓╨╕╨┤╨╡╨╗╨░ ╨╛╨┤╨╜╤Г ╤В╨░╨▒╨╗╨╕╤Ж╤Г ╨╕ ╨▓╤Б╨╡ ╨╕╨╜╤В╨╡╨│╤А╨░╤Ж╨╕╨╛╨╜╨╜╤Л╨╡ ╤В╨╡╤Б╤В╤Л
++    // ╨┐╨╛╨╝╨╡╤З╨░╨╗╨╕╤Б╤М ╨║╨░╨║ "╨╝╨╕╨│╤А╨░╤Ж╨╕╨╕ ╨╜╨╡ ╨┐╤А╨╕╨╝╨╡╨╜╨╡╨╜╤Л".
++    const tables = await sequelize.getQueryInterface().showAllTables();
++    const missing = TABLES.filter((table) => !tables.includes(table));
++    if (missing.length > 0) {
++      return {
++        ok: false,
++        reason: `╨╝╨╕╨│╤А╨░╤Ж╨╕╨╕ ╨╜╨╡ ╨┐╤А╨╕╨╝╨╡╨╜╨╡╨╜╤Л ╨║ ╤В╨╡╤Б╤В╨╛╨▓╨╛╨╣ ╨С╨Ф (╨╜╨╡╤В ╤В╨░╨▒╨╗╨╕╤Ж: ${missing.join(', ')}; npm run db:migrate ╨┐╤А╨╕ NODE_ENV=test)`,
++      };
+     }
+   } catch (err) {
+@@ -32,10 +41,11 @@ async function connect() {
+ }
+ 
+-// ╨з╨╕╤Б╤В╨╛╨╡ ╤Б╨╛╤Б╤В╨╛╤П╨╜╨╕╨╡; ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╕ ╨┐╨╡╤А╨╡╤Б╨╡╨▓╨░╤О╤В╤Б╤П ╤В╨╡╨╝╨╕ ╨╢╨╡ 6 ╨╖╨╜╨░╤З╨╡╨╜╨╕╤П╨╝╨╕, ╤З╤В╨╛ ╤Б╨╛╨╖╨┤╨░╤С╤В ╨╝╨╕╨│╤А╨░╤Ж╨╕╤П
++// ╨з╨╕╤Б╤В╨╛╨╡ ╤Б╨╛╤Б╤В╨╛╤П╨╜╨╕╨╡; ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╕ ╨┐╨╡╤А╨╡╤Б╨╡╨▓╨░╤О╤В╤Б╤П ╤В╨╡╨╝ ╨╢╨╡ ╨╜╨░╨▒╨╛╤А╨╛╨╝, ╤З╤В╨╛ ╨╛╨▒╤К╤П╨▓╨╗╨╡╨╜ ╨▓ product.validation.js,
++// ╤З╤В╨╛╨▒╤Л ╤Б╨┐╨╕╤Б╨╛╨║ ╤В╨╡╤Б╤В╨╛╨▓╤Л╤Е ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╣ ╨╜╨╡ ╤А╨░╤Б╤Е╨╛╨┤╨╕╨╗╤Б╤П ╤Б ╨▒╨╕╨╖╨╜╨╡╤Б-╨▓╨░╨╗╨╕╨┤╨░╤Ж╨╕╨╡╨╣.
+ async function reset(sequelize) {
+   await sequelize.query('TRUNCATE products, game_categories, players, player_credit_profiles RESTART IDENTITY CASCADE');
+-  await sequelize.query(
+-    "INSERT INTO game_categories (name) VALUES ('slot'),('roulette'),('blackjack'),('poker'),('baccarat'),('dice'),('lottery'),('other')"
+-  );
++  await sequelize.query('INSERT INTO game_categories (name) VALUES ' + CATEGORIES.map((_, i) => `($${i + 1})`).join(', '), {
++    bind: CATEGORIES,
++  });
+ }
+ 
+diff --git a/before/tests/integration/casino.integration.test.js b/after/tests/integration/casino.integration.test.js
+index 066d873..f78603e 100644
+--- a/before/tests/integration/casino.integration.test.js
++++ b/after/tests/integration/casino.integration.test.js
+@@ -161,6 +161,6 @@ test('╤Б╤В╨░╤В╨╕╤Б╤В╨╕╨║╨░: ╨╕╨│╤А╨╛╨║╨╕, ╨╕╨│╤А╤Л, ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╕, ╨┐╤А╨╛╨▓
+   await api('POST', '/api/games', slot);
+   await api('POST', '/api/games', { ...slot, name: 'Dice', category: 'dice', provider: 'Other Studio', isActive: false });
+-  await api('POST', '/api/players', { nickname: 'P1', email: 'p1@royal.test' });
+-  await api('POST', '/api/players', { nickname: 'P2', email: 'p2@royal.test' });
++  await api('POST', '/api/players', { nickname: 'P01', email: 'p1@royal.test' });
++  await api('POST', '/api/players', { nickname: 'P02', email: 'p2@royal.test' });
+ 
+   const all = await api('GET', '/api/casino/statistics');
+@@ -198,5 +198,8 @@ test('╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╕: casino-╨┐╤Г╤В╤М /api/categories, ╨┤╤Г╨▒╨╗╨╕╨║╨░╤В -> 4
+   assert.match(created.headers.get('location'), /^\/api\/categories\/\d+$/);
+   assert.equal((await api('POST', '/api/categories', { name: 'KENO' })).status, 409);
+-  const g = await api('POST', '/api/games', { ...slot, categoryId: created.body.data.id });
++  // categoryId ╨╕ legacy-╤Б╤В╤А╨╛╨║╨░ category ╨╜╨╡ ╨┤╨╛╨╗╨╢╨╜╤Л ╨┐╤А╨╛╤В╨╕╨▓╨╛╤А╨╡╤З╨╕╤В╤М ╨┤╤А╤Г╨│ ╨┤╤А╤Г╨│╤Г,
++  // ╨┐╨╛╤Н╤В╨╛╨╝╤Г ╨┐╤А╨╕ ╨╜╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╕ ╨╜╨╛╨▓╨╛╨╣ ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╕ ╤Б╨╗╨░╨│ ╨╕╨╖ ╤И╨░╨▒╨╗╨╛╨╜╨░ slot ╤Г╨▒╨╕╤А╨░╨╡╨╝.
++  const { category, ...rest } = slot;
++  const g = await api('POST', '/api/games', { ...rest, categoryId: created.body.data.id });
+   assert.equal(g.status, 201);
+   assert.equal((await api('DELETE', `/api/categories/${created.body.data.id}`)).status, 409);

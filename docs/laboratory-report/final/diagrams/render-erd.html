@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>erd</title>
+<style>
+html,body{margin:0;padding:0;background:#ffffff}
+body{font-family:"Segoe UI",Arial,sans-serif;padding:0}
+#diagram{width:1180px;background:#ffffff}
+#diagram svg{display:block;max-width:none;height:auto}
+</style>
+<script src="./vendor/mermaid.min.js"></script></head>
+<body>
+<div id="diagram"></div>
+<script>
+const def = "erDiagram\n  GAME_CATEGORIES ||--o{ PRODUCTS : \"category_id (ON DELETE RESTRICT)\"\n  PLAYERS ||--o| PLAYER_CREDIT_PROFILES : \"player_id (ON DELETE CASCADE)\"\n\n  GAME_CATEGORIES {\n    int id PK\n    varchar name \"уникально lower(name)\"\n    boolean is_active\n  }\n\n  PRODUCTS {\n    int id PK\n    varchar name\n    varchar category \"тип игры, CHECK\"\n    varchar provider\n    varchar volatility \"LOW / MEDIUM / HIGH\"\n    int category_id FK \"nullable, RESTRICT\"\n    numeric min_bet\n    numeric max_bet\n    numeric rtp \"0..100\"\n    boolean is_active\n  }\n\n  PLAYERS {\n    int id PK\n    varchar nickname \"уникально lower(nickname)\"\n    varchar email \"уникально\"\n    boolean is_active\n  }\n\n  PLAYER_CREDIT_PROFILES {\n    int id PK\n    int player_id FK \"уникально\"\n    numeric balance \">= 0, стартовый 1000\"\n  }\n";
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict',
+  fontFamily: 'Segoe UI, Arial, sans-serif', fontSize: 16,
+  flowchart: { htmlLabels: true, curve: 'basis', useMaxWidth: false },
+  sequence: { useMaxWidth: false, wrap: false },
+  er: { useMaxWidth: false, minEntityWidth: 130, entityPadding: 14 } });
+(async () => {
+  const { svg } = await mermaid.render('diagram-svg', def);
+  document.getElementById('diagram').innerHTML = svg;
+  window.__rendered = true;
+  document.title = 'ready';
+})().catch((e) => { document.body.innerHTML = '<pre>' + e.stack + '</pre>'; document.title = 'error'; });
+</script></body></html>

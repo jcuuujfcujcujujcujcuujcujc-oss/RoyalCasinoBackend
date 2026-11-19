@@ -1,0 +1,21 @@
+﻿git : warning: in the working copy of 'before/package.json', LF will be replaced by CRLF the next time Git touches it
+строка:13 знак:1
++ git diff --no-index --stat -- before after 2>&1 | Out-File -FilePath  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of 'after/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'before/tests/api.test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'after/tests/api.test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'before/tests/helpers/db.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'after/tests/helpers/db.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'before/tests/integration/casino.integration.test.js', LF will be replaced by CRLF the 
+next time Git touches it
+warning: in the working copy of 'after/tests/integration/casino.integration.test.js', LF will be replaced by CRLF the n
+ext time Git touches it
+ {before => after}/package.json                     |  4 ++--
+ {before => after}/tests/api.test.js                | 10 +++++---
+ {before => after}/tests/helpers/db.js              | 28 +++++++++++++++-------
+ .../tests/integration/casino.integration.test.js   |  9 ++++---
+ 4 files changed, 34 insertions(+), 17 deletions(-)

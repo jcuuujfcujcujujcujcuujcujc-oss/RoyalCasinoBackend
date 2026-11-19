@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Standard feature module anatomy</title>
+<style>
+html,body{margin:0;padding:0;background:#fff}
+body{font-family:"Segoe UI",Arial,sans-serif;padding:28px 32px}
+.caption{font-size:18px;color:#222;margin:0 0 18px;font-weight:600}
+#diagram{width:1500px}
+#diagram svg{max-width:100%;height:auto}
+</style>
+<script src="vendor/mermaid.min.js"></script></head>
+<body>
+<div class="caption">Standard feature module anatomy</div>
+<div id="diagram"></div>
+<script>
+const def = "flowchart LR\n  subgraph Anatomy[\"Standard module anatomy\"]\n    R[\"*.routes.js\"] --> C[\"*.controller.js\"]\n    C --> V[\"*.validation.js\"]\n    C --> S[\"*.service.js\"]\n    S --> M[\"*.model.js\"]\n    S --> T[\"sequelize.transaction\"]\n  end\n  R --> Registry[\"src/routes/index.js\"]\n  M --> Registry2[\"src/models/index.js<br/>associations\"]\n  S --> DB[(\"PostgreSQL<br/>migrations define the schema\")]\n  Registry --> App[\"src/app.js\"]\n  Registry2 --> App\n  New[\"New module checklist:<br/>1 model + 1 migration<br/>1 validation + 1 service<br/>1 controller + 1 router<br/>mount in routes/index.js<br/>register model in models/index.js\"] -.-> Anatomy\n";
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict',
+  fontFamily: 'Segoe UI, Arial, sans-serif',
+  flowchart: { htmlLabels: true, curve: 'basis', useMaxWidth: true },
+  sequence: { useMaxWidth: true }, er: { useMaxWidth: true } });
+(async () => {
+  const { svg } = await mermaid.render('diagram-svg', def);
+  document.getElementById('diagram').innerHTML = svg;
+  window.__rendered = true;
+  document.title = 'ready';
+})().catch((e) => { document.body.innerHTML = '<pre>' + e.stack + '</pre>'; });
+</script></body></html>

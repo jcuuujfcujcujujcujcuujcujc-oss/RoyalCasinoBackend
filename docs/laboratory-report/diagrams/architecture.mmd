@@ -1,0 +1,23 @@
+flowchart TB
+  Client["HTTP client (JSON)"] --> App["src/app.js<br/>Express 5 application"]
+  App --> MW["Middleware<br/>security headers, express.json (100 kb)"]
+  MW --> Routes["src/routes/index.js<br/>route composition"]
+  Routes --> Prod["/api/games | /api/products"]
+  Routes --> Cat["/api/categories | /api/game-categories"]
+  Routes --> Play["/api/players"]
+  Routes --> Stat["/api/casino/statistics"]
+  subgraph Modules["Feature modules (controller -> service -> model)"]
+    Prod --> PC["product.controller.js"] --> PS["product.service.js"] --> PM["Product model"]
+    Cat --> CC["gameCategory.controller.js"] --> CS["gameCategory.service.js"] --> CM["GameCategory model"]
+    Play --> PLC["player.controller.js"] --> PLS["player.service.js"] --> PLM["Player model"]
+    Play --> CRC["credit.controller.js"] --> CRS["credit.service.js"] --> CRM["PlayerCreditProfile model"]
+    Stat --> SC["statistics.controller.js"] --> SS["statistics.service.js"] --> SQ["statistics.queries.js<br/>static SQL"]
+  end
+  PM --> DB[("PostgreSQL 15<br/>products, game_categories, players,<br/>player_credit_profiles")]
+  CM --> DB
+  PLM --> DB
+  CRM --> DB
+  SQ --> DB
+  PS -. "AppError / Sequelize errors" .-> EH["src/middleware/errorHandler.js<br/>HTTP error mapping"]
+  CS -.-> EH
+  PLS -.-> EH

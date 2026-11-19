@@ -1,0 +1,35 @@
+erDiagram
+  GAME_CATEGORIES ||--o{ PRODUCTS : "category_id (ON DELETE RESTRICT)"
+  PLAYERS ||--o| PLAYER_CREDIT_PROFILES : "player_id (ON DELETE CASCADE)"
+
+  GAME_CATEGORIES {
+    int id PK
+    varchar name "уникально lower(name)"
+    boolean is_active
+  }
+
+  PRODUCTS {
+    int id PK
+    varchar name
+    varchar category "тип игры, CHECK"
+    varchar provider
+    varchar volatility "LOW / MEDIUM / HIGH"
+    int category_id FK "nullable, RESTRICT"
+    numeric min_bet
+    numeric max_bet
+    numeric rtp "0..100"
+    boolean is_active
+  }
+
+  PLAYERS {
+    int id PK
+    varchar nickname "уникально lower(nickname)"
+    varchar email "уникально"
+    boolean is_active
+  }
+
+  PLAYER_CREDIT_PROFILES {
+    int id PK
+    int player_id FK "уникально"
+    numeric balance ">= 0, стартовый 1000"
+  }

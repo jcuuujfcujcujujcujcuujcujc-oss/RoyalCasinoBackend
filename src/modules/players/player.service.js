@@ -5,6 +5,7 @@ const { createStarterProfile } = require('../player-credits/credit.service');
 const { NotFoundError, ConflictError } = require('../../errors/AppError');
 const { EDITABLE_FIELDS } = require('./player.validation');
 const { record } = require('../audit/audit.service');
+const { AppError } = require('../../errors/AppError');
 
 async function findOrFail(id, options = {}) {
   const player = await Player.findByPk(id, options);
@@ -76,6 +77,33 @@ async function replace(id, data, userId) {
 
 const update = replace;
 
+async function updateOwned(id, data, userId) {
+  if (data.email !== undefined) {
+    throw new AppError(
+      403,
+      'Изменение email требует отдельной административной операции',
+      'EMAIL_CHANGE_FORBIDDEN'
+    );
+  }
+  const safeData = { ...data };
+  delete safeData.isActive;
+  return sequelize.transaction(async (transaction) => {
+    const player = await findOrFail(id, { transaction, lock: transaction.LOCK.UPDATE });
+    await player.update(safeData, { fields: EDITABLE_FIELDS, transaction });
+    await record(
+      {
+        userId,
+        action: 'UPDATE_PLAYER',
+        entityType: 'Player',
+        entityId: id,
+        details: { fields: Object.keys(safeData) },
+      },
+      transaction
+    );
+    return player;
+  });
+}
+
 async function remove(id, userId) {
   await sequelize.transaction(async (transaction) => {
     const player = await findOrFail(id, { transaction, lock: transaction.LOCK.UPDATE });
@@ -89,4 +117,4 @@ async function remove(id, userId) {
   });
 }
 
-module.exports = { list, getById, create, replace, update, remove };
+module.exports = { list, getById, create, replace, update, updateOwned, remove };

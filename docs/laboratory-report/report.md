@@ -98,3 +98,12 @@
 - `npm run test:unit`: 68/68 PASS. `npm test`: 68 PASS, 36 integration SKIP из-за отсутствия отдельной PostgreSQL `_test` базы. `npm run lint`, `npm run format:check`, `npm audit`: PASS (0 vulnerabilities).
 - Madge проверил 53 исходных файла: циклических зависимостей не найдено. depcheck сообщил только `pg` и `pg-hstore`; это ложные срабатывания для Sequelize PostgreSQL dialect, они намеренно сохранены.
 - Docker и PostgreSQL в текущем окружении недоступны; DB integration и миграции не запускались.
+
+## Этап 2 — безопасность
+
+- Добавлены `TRUST_PROXY` (по умолчанию отключён) и `ENABLE_DOCS` (выключена по умолчанию в production); production отклоняет шаблонный пароль БД.
+- Login rate limits учитывают только ошибки и применяются по IP и нормализованному email. Требует проверки на общем store при нескольких экземплярах приложения.
+- Добавлена миграция refresh-token семейства (`family_id`, `replaced_by`), ротация внутри транзакции, отзыв семейства и audit при повторном использовании, endpoint `POST /api/auth/logout-all`.
+- Заглушка bcrypt создаётся при старте с настроенным `BCRYPT_ROUNDS`. MANAGER получил чтение любого профиля игрока/кредитного профиля; не-ADMIN не может менять email через Player PATCH.
+- Изменены интеграционные сценарии повторного использования, logout-all и запрета изменения email. `npm run lint`, `npm run test:unit` (68 PASS), `npm test` (68 PASS, 37 SKIP из-за отсутствия PostgreSQL), `npm run format:check` и `git diff --check` прошли.
+- Миграция refresh-семейств, PostgreSQL integration, brute-force с реальным store и поведение через доверенный reverse proxy не проверены: PostgreSQL и прокси в среде отсутствуют.

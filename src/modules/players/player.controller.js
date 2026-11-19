@@ -31,7 +31,11 @@ async function replace(req, res) {
 
 async function update(req, res) {
   const id = parseId(req.params.id);
-  res.status(200).json({ data: await service.update(id, validatePatch(req.body), req.auth.id) });
+  const data = validatePatch(req.body);
+  const player = req.auth.roles.includes('ADMIN')
+    ? await service.update(id, data, req.auth.id)
+    : await service.updateOwned(id, data, req.auth.id);
+  res.status(200).json({ data: player });
 }
 
 async function remove(req, res) {

@@ -2,7 +2,7 @@
 
 const helmet = require('helmet');
 
-// Swagger UI currently embeds its bootstrap configuration and styles; permit inline code only on this route.
+// swagger-ui-express injects its bootstrap config and styles inline; this exception is confined to Swagger.
 module.exports = helmet.contentSecurityPolicy({
   directives: {
     scriptSrc: ["'self'", "'unsafe-inline'"],

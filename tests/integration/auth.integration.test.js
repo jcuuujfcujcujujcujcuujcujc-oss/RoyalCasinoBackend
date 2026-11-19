@@ -73,17 +73,26 @@ test('login, refresh rotation, replay rejection, me and logout', async (t) => {
     (await api('POST', '/api/auth/refresh', { refreshToken: login.body.data.refreshToken })).status,
     401
   );
+  assert.equal(
+    (await api('POST', '/api/auth/refresh', { refreshToken: refreshed.body.data.refreshToken })).status,
+    401,
+    'повторное предъявление старого токена отзывает всё семейство'
+  );
   const authenticated = client(srv.baseUrl, refreshed.body.data.accessToken);
   assert.equal((await authenticated('GET', '/api/auth/me')).status, 200);
   const { Player } = require('../../src/models');
   const ownPlayer = await Player.findOne({ where: { userId: refreshed.body.data.user.id } });
   assert.equal((await authenticated('GET', `/api/players/${ownPlayer.id}`)).status, 200);
-  const newEmail = `renamed-${suffix}@example.test`;
+  const originalEmail = `tokens-${suffix}@example.test`;
   assert.equal(
-    (await authenticated('PATCH', `/api/players/${ownPlayer.id}`, { email: newEmail })).status,
-    200
+    (
+      await authenticated('PATCH', `/api/players/${ownPlayer.id}`, {
+        email: `renamed-${suffix}@example.test`,
+      })
+    ).status,
+    403
   );
-  assert.equal((await authenticated('GET', '/api/auth/me')).body.data.email, newEmail);
+  assert.equal((await authenticated('GET', '/api/auth/me')).body.data.email, originalEmail);
   const stranger = await Player.create({
     nickname: `S${crypto.randomUUID().replaceAll('-', '').slice(0, 10)}`,
     email: `stranger-${crypto.randomUUID()}@example.test`,
@@ -96,6 +105,25 @@ test('login, refresh rotation, replay rejection, me and logout', async (t) => {
   );
   assert.equal(
     (await api('POST', '/api/auth/refresh', { refreshToken: refreshed.body.data.refreshToken })).status,
+    401
+  );
+});
+
+test('logout-all revokes every active refresh token', async (t) => {
+  if (!guard(t)) return;
+  const suffix = crypto.randomUUID().replaceAll('-', '').slice(0, 12);
+  const email = `logout-all-${suffix}@example.test`;
+  const password = 'StrongPassword123!';
+  const first = await api('POST', '/api/auth/register', { email, password, nickname: `L${suffix}` });
+  const second = await api('POST', '/api/auth/login', { email, password });
+  const auth = client(srv.baseUrl, first.body.data.accessToken);
+  assert.equal((await auth('POST', '/api/auth/logout-all', {})).status, 204);
+  assert.equal(
+    (await api('POST', '/api/auth/refresh', { refreshToken: first.body.data.refreshToken })).status,
+    401
+  );
+  assert.equal(
+    (await api('POST', '/api/auth/refresh', { refreshToken: second.body.data.refreshToken })).status,
     401
   );
 });

@@ -45,6 +45,13 @@ const authorize =
     next();
   };
 
+function ownerOrStaff(req, res, next) {
+  if (req.auth.roles.some((role) => ['ADMIN', 'MANAGER'].includes(role))) return next();
+  if (!req.auth.playerId || String(req.auth.playerId) !== String(req.params.id))
+    return next(new AppError(404, 'Объект не найден', 'NOT_FOUND'));
+  next();
+}
+
 function ownerOrAdmin(req, res, next) {
   if (req.auth.roles.includes('ADMIN')) return next();
   if (!req.auth.playerId || String(req.auth.playerId) !== String(req.params.id))
@@ -59,4 +66,4 @@ function preventOwnStatusChange(req, res, next) {
   next();
 }
 
-module.exports = { authenticate, authorize, ownerOrAdmin, preventOwnStatusChange };
+module.exports = { authenticate, authorize, ownerOrStaff, ownerOrAdmin, preventOwnStatusChange };

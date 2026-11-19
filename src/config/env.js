@@ -5,6 +5,13 @@ require('dotenv').config({ quiet: true });
 const toBool = (value, fallback = false) =>
   value === undefined ? fallback : ['1', 'true', 'yes', 'on'].includes(String(value).toLowerCase());
 
+const toTrustProxy = (value) => {
+  if (value === undefined || ['false', '0', 'off', ''].includes(String(value).toLowerCase())) return false;
+  if (['true', 'on'].includes(String(value).toLowerCase())) return true;
+  if (/^\d+$/.test(String(value))) return Number(value);
+  return String(value);
+};
+
 const toPort = (value, fallback) => {
   const port = value === undefined ? fallback : Number.parseInt(value, 10);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -41,6 +48,8 @@ const env = {
     bcryptRounds: toBoundedInt(process.env.BCRYPT_ROUNDS, 12, 10, 15, 'BCRYPT_ROUNDS'),
   },
   corsOrigin: process.env.CORS_ORIGIN || '',
+  trustProxy: toTrustProxy(process.env.TRUST_PROXY),
+  enableDocs: toBool(process.env.ENABLE_DOCS, process.env.NODE_ENV !== 'production'),
 };
 
 env.isProduction = env.nodeEnv === 'production';
@@ -51,6 +60,9 @@ if (env.isProduction) {
   );
   if (missing.length > 0) {
     throw new Error(`Не заданы обязательные переменные окружения: ${missing.join(', ')}`);
+  }
+  if (['change_me', 'password', 'example', 'changeme'].includes(process.env.DB_PASSWORD.toLowerCase())) {
+    throw new Error('DB_PASSWORD содержит небезопасное шаблонное значение');
   }
 }
 

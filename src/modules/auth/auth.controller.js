@@ -13,4 +13,8 @@ exports.logout = async (req, res) => {
   await service.logout(body(req.body).refreshToken, req.auth.id);
   res.status(204).end();
 };
+exports.logoutAll = async (req, res) => {
+  await service.logoutAll(req.auth.id);
+  res.status(204).end();
+};
 exports.me = async (req, res) => res.json({ data: req.auth });

@@ -7,7 +7,7 @@ const { User, Role, UserRole, RefreshToken, Player, sequelize } = require('../..
 const { createStarterProfile } = require('../player-credits/credit.service');
 const { AppError } = require('../../errors/AppError');
 const { record } = require('../audit/audit.service');
-const DUMMY_PASSWORD_HASH = '$2b$12$gg3GZ5M.HkL6j9g9pWHTiOyKbW0tmG0xWp4wHSOmCyEfdPWusA/IG';
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), env.auth.bcryptRounds);
 
 const digest = (token) => crypto.createHash('sha256').update(token).digest('hex');
 function configSecret() {
@@ -28,7 +28,7 @@ function validateCredentials(email, password) {
   }
   return normalized;
 }
-async function issue(user, transaction) {
+async function issue(user, transaction, familyId = crypto.randomUUID()) {
   const roles = await user.getRoles({ transaction });
   const roleCodes = roles.map((role) => role.code);
   const accessToken = jwt.sign({ sub: String(user.id), roles: roleCodes }, configSecret(), {
@@ -38,15 +38,21 @@ async function issue(user, transaction) {
     audience: 'royal-casino-api',
   });
   const refreshToken = crypto.randomBytes(48).toString('base64url');
-  await RefreshToken.create(
+  const storedToken = await RefreshToken.create(
     {
       userId: user.id,
+      familyId,
       tokenHash: digest(refreshToken),
       expiresAt: new Date(Date.now() + env.auth.refreshTtlDays * 86400000),
     },
     { transaction }
   );
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, refreshTokenId: storedToken.id };
+}
+function stripInternalToken(tokens) {
+  const publicTokens = { ...tokens };
+  delete publicTokens.refreshTokenId;
+  return publicTokens;
 }
 async function register({ email, password, nickname }) {
   const normalized = validateCredentials(email, password);
@@ -73,7 +79,7 @@ async function register({ email, password, nickname }) {
     );
     return {
       user: { id: user.id, email: user.email, roles: ['PLAYER'] },
-      ...(await issue(user, transaction)),
+      ...stripInternalToken(await issue(user, transaction)),
     };
   });
 }
@@ -106,20 +112,38 @@ async function login({ email, password }) {
     const result = await issue(user, transaction);
     return {
       user: { id: user.id, email: user.email, roles: user.roles.map((role) => role.code) },
-      ...result,
+      ...stripInternalToken(result),
     };
   });
 }
 async function refresh(raw) {
   if (typeof raw !== 'string' || raw.length < 50 || raw.length > 200)
     throw new AppError(401, 'Недействительный refresh token', 'INVALID_REFRESH_TOKEN');
-  return sequelize.transaction(async (transaction) => {
+  const result = await sequelize.transaction(async (transaction) => {
     const stored = await RefreshToken.findOne({
       where: { tokenHash: digest(raw) },
       transaction,
       lock: transaction.LOCK.UPDATE,
     });
-    if (!stored || stored.revokedAt || stored.expiresAt <= new Date())
+    if (!stored) throw new AppError(401, 'Refresh token истёк или отозван', 'INVALID_REFRESH_TOKEN');
+    if (stored.revokedAt) {
+      await RefreshToken.update(
+        { revokedAt: new Date() },
+        { where: { familyId: stored.familyId, revokedAt: null }, transaction }
+      );
+      await record(
+        {
+          userId: stored.userId,
+          action: 'REFRESH_TOKEN_REUSE',
+          entityType: 'RefreshToken',
+          entityId: stored.id,
+          details: { familyId: stored.familyId },
+        },
+        transaction
+      );
+      return { replay: true };
+    }
+    if (stored.expiresAt <= new Date())
       throw new AppError(401, 'Refresh token истёк или отозван', 'INVALID_REFRESH_TOKEN');
     const user = await User.findByPk(stored.userId, {
       include: [{ model: Role, as: 'roles', through: { attributes: [] } }],
@@ -128,6 +152,8 @@ async function refresh(raw) {
     });
     if (!user?.isActive) throw new AppError(401, 'Сеанс недействителен', 'INVALID_REFRESH_TOKEN');
     stored.revokedAt = new Date();
+    const next = await issue(user, transaction, stored.familyId);
+    stored.replacedBy = next.refreshTokenId;
     await stored.save({ transaction });
     await record(
       { userId: user.id, action: 'TOKEN_REFRESH', entityType: 'User', entityId: user.id, details: {} },
@@ -135,9 +161,16 @@ async function refresh(raw) {
     );
     return {
       user: { id: user.id, email: user.email, roles: user.roles.map((role) => role.code) },
-      ...(await issue(user, transaction)),
+      ...stripInternalToken(next),
     };
   });
+  if (result.replay)
+    throw new AppError(
+      401,
+      'Обнаружено повторное использование refresh token; семейство отозвано',
+      'REFRESH_TOKEN_REUSE'
+    );
+  return result;
 }
 async function logout(raw, userId) {
   return sequelize.transaction(async (transaction) => {
@@ -158,4 +191,15 @@ async function logout(raw, userId) {
     );
   });
 }
-module.exports = { register, login, refresh, logout, validateCredentials };
+
+async function logoutAll(userId) {
+  return sequelize.transaction(async (transaction) => {
+    await RefreshToken.update({ revokedAt: new Date() }, { where: { userId, revokedAt: null }, transaction });
+    await record(
+      { userId, action: 'LOGOUT_ALL', entityType: 'User', entityId: userId, details: {} },
+      transaction
+    );
+  });
+}
+
+module.exports = { register, login, refresh, logout, logoutAll, validateCredentials };

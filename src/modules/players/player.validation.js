@@ -39,7 +39,8 @@ const validators = {
   isActive: booleanValidator,
 };
 
-const validateFields = (body, required) => validateBySpec(body, { editable: EDITABLE_FIELDS, validators, required });
+const validateFields = (body, required) =>
+  validateBySpec(body, { editable: EDITABLE_FIELDS, validators, required });
 
 const validateCreate = (body) => validateFields(body, REQUIRED_ON_CREATE);
 
@@ -61,7 +62,12 @@ function validateListQuery(query = {}) {
   const { sortBy, order } = readSorting(query, SORTABLE_FIELDS, details);
   const filters = {};
   if (query.search !== undefined) {
-    if (typeof query.search !== 'string' || query.search.trim().length < 1 || query.search.trim().length > 100) details.push({ field: 'search', message: 'длина от 1 до 100 символов' });
+    if (
+      typeof query.search !== 'string' ||
+      query.search.trim().length < 1 ||
+      query.search.trim().length > 100
+    )
+      details.push({ field: 'search', message: 'длина от 1 до 100 символов' });
     else filters.search = query.search.trim();
   }
   readBooleanFilter(query, 'isActive', filters, details);

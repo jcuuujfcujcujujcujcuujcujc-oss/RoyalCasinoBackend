@@ -14,12 +14,22 @@ async function findOrFail(id, options = {}) {
 
 async function list({ page, limit, sortBy, order, filters }) {
   const where = { ...filters };
-  if (where.search) { const search = where.search; delete where.search; const { Op } = require('sequelize'); where[Op.or] = ['nickname', 'email'].map((field) => ({ [field]: { [Op.iLike]: `%${search.replace(/[\\%_]/g, '\\$&')}%` } })); }
+  if (where.search) {
+    const search = where.search;
+    delete where.search;
+    const { Op } = require('sequelize');
+    where[Op.or] = ['nickname', 'email'].map((field) => ({
+      [field]: { [Op.iLike]: `%${search.replace(/[\\%_]/g, '\\$&')}%` },
+    }));
+  }
   const { rows, count } = await Player.findAndCountAll({
     where,
     limit,
     offset: (page - 1) * limit,
-    order: [[sortBy, order.toUpperCase()], ['id', 'ASC']],
+    order: [
+      [sortBy, order.toUpperCase()],
+      ['id', 'ASC'],
+    ],
   });
   return { data: rows, meta: { page, limit, total: count, totalPages: Math.ceil(count / limit) } };
 }
@@ -32,7 +42,10 @@ const create = (data, userId) =>
   sequelize.transaction(async (transaction) => {
     const player = await Player.create(data, { fields: EDITABLE_FIELDS, transaction });
     await createStarterProfile(player.id, transaction);
-    await record({ userId, action: 'CREATE_PLAYER', entityType: 'Player', entityId: player.id, details: {} }, transaction);
+    await record(
+      { userId, action: 'CREATE_PLAYER', entityType: 'Player', entityId: player.id, details: {} },
+      transaction
+    );
     return player;
   });
 
@@ -41,10 +54,22 @@ async function replace(id, data, userId) {
     const player = await findOrFail(id, { transaction, lock: transaction.LOCK.UPDATE });
     if (data.email !== undefined && player.userId) {
       const user = await User.findByPk(player.userId, { transaction, lock: transaction.LOCK.UPDATE });
-      if (user) { user.email = data.email; await user.save({ transaction }); }
+      if (user) {
+        user.email = data.email;
+        await user.save({ transaction });
+      }
     }
     await player.update(data, { fields: EDITABLE_FIELDS, transaction });
-    await record({ userId, action: 'REPLACE_PLAYER', entityType: 'Player', entityId: id, details: { fields: Object.keys(data) } }, transaction);
+    await record(
+      {
+        userId,
+        action: 'REPLACE_PLAYER',
+        entityType: 'Player',
+        entityId: id,
+        details: { fields: Object.keys(data) },
+      },
+      transaction
+    );
     return player;
   });
 }
@@ -54,9 +79,13 @@ const update = replace;
 async function remove(id, userId) {
   await sequelize.transaction(async (transaction) => {
     const player = await findOrFail(id, { transaction, lock: transaction.LOCK.UPDATE });
-    if (player.userId) throw new ConflictError('Профиль связан с учётной записью; заблокируйте пользователя вместо удаления');
+    if (player.userId)
+      throw new ConflictError('Профиль связан с учётной записью; заблокируйте пользователя вместо удаления');
     await player.destroy({ transaction });
-    await record({ userId, action: 'DELETE_PLAYER', entityType: 'Player', entityId: id, details: {} }, transaction);
+    await record(
+      { userId, action: 'DELETE_PLAYER', entityType: 'Player', entityId: id, details: {} },
+      transaction
+    );
   });
 }
 

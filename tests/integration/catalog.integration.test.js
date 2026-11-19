@@ -98,7 +98,10 @@ test('Product: параллельные PATCH minBet/maxBet не нарушаю�
     api('PATCH', `/api/products/${id}`, { minBet: 40 }),
     api('PATCH', `/api/products/${id}`, { maxBet: 20 }),
   ]);
-  assert.ok([a.status, b.status].every((s) => s === 200 || s === 422), `статусы: ${a.status}, ${b.status}`);
+  assert.ok(
+    [a.status, b.status].every((s) => s === 200 || s === 422),
+    `статусы: ${a.status}, ${b.status}`
+  );
   const stored = (await api('GET', `/api/products/${id}`)).body.data;
   assert.ok(stored.minBet <= stored.maxBet);
 });
@@ -146,8 +149,9 @@ test('GameCategory: имя уникально без учёта регистра
 test('Product: назначение категории по categoryId и фильтр по ней', async (t) => {
   if (!guard(t)) return;
   const cat = (await api('POST', '/api/game-categories', { name: 'Bingo' })).body.data;
-  const { category, ...rest } = game;
-  const created = await api('POST', '/api/products', { ...rest, categoryId: cat.id });
+  const gameWithoutCategory = { ...game };
+  delete gameWithoutCategory.category;
+  const created = await api('POST', '/api/products', { ...gameWithoutCategory, categoryId: cat.id });
   assert.equal(created.status, 201);
   assert.equal(created.body.data.categoryId, cat.id);
   assert.equal(created.body.data.category, 'other'); // устаревшее поле выводится из имени категории
@@ -162,14 +166,18 @@ test('Product: назначение категории по categoryId и фил
 test('Product: несуществующий categoryId -> 422; несогласованные category/categoryId -> 422', async (t) => {
   if (!guard(t)) return;
   assert.equal((await api('POST', '/api/products', { ...game, categoryId: 99999 })).status, 422);
-  const roulette = (await api('GET', '/api/game-categories?sortBy=name&limit=100')).body.data.find((c) => c.name === 'roulette');
+  const roulette = (await api('GET', '/api/game-categories?sortBy=name&limit=100')).body.data.find(
+    (c) => c.name === 'roulette'
+  );
   assert.equal((await api('POST', '/api/products', { ...game, categoryId: roulette.id })).status, 422);
 });
 
 test('Product PATCH: categoryId меняет связь, null снимает её', async (t) => {
   if (!guard(t)) return;
   const { body } = await api('POST', '/api/products', game);
-  const poker = (await api('GET', '/api/game-categories?limit=100')).body.data.find((c) => c.name === 'poker');
+  const poker = (await api('GET', '/api/game-categories?limit=100')).body.data.find(
+    (c) => c.name === 'poker'
+  );
   const moved = await api('PATCH', `/api/products/${body.data.id}`, { categoryId: poker.id });
   assert.equal(moved.body.data.category, 'poker');
   const detached = await api('PATCH', `/api/products/${body.data.id}`, { categoryId: null });
@@ -198,7 +206,9 @@ test('БД: внешний ключ RESTRICT срабатывает и без п
   if (!guard(t)) return;
   const { body } = await api('POST', '/api/products', game);
   await assert.rejects(
-    ctx.sequelize.query('DELETE FROM game_categories WHERE id = :id', { replacements: { id: body.data.categoryId } }),
+    ctx.sequelize.query('DELETE FROM game_categories WHERE id = :id', {
+      replacements: { id: body.data.categoryId },
+    }),
     (err) => err.parent && err.parent.code === '23503'
   );
 });

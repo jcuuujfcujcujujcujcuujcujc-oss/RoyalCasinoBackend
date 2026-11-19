@@ -14,12 +14,21 @@ async function findOrFail(id, options = {}) {
 
 async function list({ page, limit, sortBy, order, filters }) {
   const where = { ...filters };
-  if (where.search) { const search = where.search; delete where.search; where[Op.or] = ['name', 'description'].map((field) => ({ [field]: { [Op.iLike]: `%${search.replace(/[\\%_]/g, '\\$&')}%` } })); }
+  if (where.search) {
+    const search = where.search;
+    delete where.search;
+    where[Op.or] = ['name', 'description'].map((field) => ({
+      [field]: { [Op.iLike]: `%${search.replace(/[\\%_]/g, '\\$&')}%` },
+    }));
+  }
   const { rows, count } = await GameCategory.findAndCountAll({
     where,
     limit,
     offset: (page - 1) * limit,
-    order: [[sortBy, order.toUpperCase()], ['id', 'ASC']],
+    order: [
+      [sortBy, order.toUpperCase()],
+      ['id', 'ASC'],
+    ],
   });
   return { data: rows, meta: { page, limit, total: count, totalPages: Math.ceil(count / limit) } };
 }
@@ -27,17 +36,36 @@ async function list({ page, limit, sortBy, order, filters }) {
 const getById = (id) => findOrFail(id);
 
 // Дубликаты имени ловит уникальный индекс БД -> UniqueConstraintError -> 409 в errorHandler
-const create = (data, userId) => sequelize.transaction(async (transaction) => {
-  const category = await GameCategory.create(data, { fields: EDITABLE_FIELDS, transaction });
-  await record({ userId, action: 'CREATE_CATEGORY', entityType: 'GameCategory', entityId: category.id, details: { name: category.name } }, transaction);
-  return category;
-});
+const create = (data, userId) =>
+  sequelize.transaction(async (transaction) => {
+    const category = await GameCategory.create(data, { fields: EDITABLE_FIELDS, transaction });
+    await record(
+      {
+        userId,
+        action: 'CREATE_CATEGORY',
+        entityType: 'GameCategory',
+        entityId: category.id,
+        details: { name: category.name },
+      },
+      transaction
+    );
+    return category;
+  });
 
 async function replace(id, data, userId) {
   return sequelize.transaction(async (transaction) => {
     const category = await findOrFail(id, { transaction, lock: transaction.LOCK.UPDATE });
     await category.update(data, { fields: EDITABLE_FIELDS, transaction });
-    await record({ userId, action: 'REPLACE_CATEGORY', entityType: 'GameCategory', entityId: id, details: { fields: Object.keys(data) } }, transaction);
+    await record(
+      {
+        userId,
+        action: 'REPLACE_CATEGORY',
+        entityType: 'GameCategory',
+        entityId: id,
+        details: { fields: Object.keys(data) },
+      },
+      transaction
+    );
     return category;
   });
 }
@@ -54,7 +82,10 @@ async function remove(id, userId) {
       throw new ConflictError(`Категория используется в играх (${productsCount}): удаление невозможно`);
     }
     await category.destroy({ transaction });
-    await record({ userId, action: 'DELETE_CATEGORY', entityType: 'GameCategory', entityId: id, details: {} }, transaction);
+    await record(
+      { userId, action: 'DELETE_CATEGORY', entityType: 'GameCategory', entityId: id, details: {} },
+      transaction
+    );
   });
 }
 

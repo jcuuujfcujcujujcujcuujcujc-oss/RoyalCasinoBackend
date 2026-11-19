@@ -19,11 +19,20 @@ test('create: лишние поля отбрасываются (белый сп�
 });
 
 test('create: все обязательные поля перечисляются в ошибке', () => {
-  assert.throws(() => validateCreate({}), (err) => {
-    assert.equal(err.code, 'VALIDATION_ERROR');
-    assert.deepEqual(err.details.map((d) => d.field).sort(), ['category', 'maxBet', 'minBet', 'name', 'rtp']);
-    return true;
-  });
+  assert.throws(
+    () => validateCreate({}),
+    (err) => {
+      assert.equal(err.code, 'VALIDATION_ERROR');
+      assert.deepEqual(err.details.map((d) => d.field).sort(), [
+        'category',
+        'maxBet',
+        'minBet',
+        'name',
+        'rtp',
+      ]);
+      return true;
+    }
+  );
 });
 
 test('create: неверные типы отклоняются', () => {
@@ -48,11 +57,14 @@ test('create: неизвестная категория отклоняется',
 });
 
 test('create: minBet больше maxBet отклоняется', () => {
-  assert.throws(() => validateCreate({ ...valid, minBet: 500, maxBet: 100 }), (err) => {
-    assert.equal(err.code, 'VALIDATION_ERROR');
-    assert.equal(err.details[0].field, 'maxBet');
-    return true;
-  });
+  assert.throws(
+    () => validateCreate({ ...valid, minBet: 500, maxBet: 100 }),
+    (err) => {
+      assert.equal(err.code, 'VALIDATION_ERROR');
+      assert.equal(err.details[0].field, 'maxBet');
+      return true;
+    }
+  );
 });
 
 test('replace: необязательные поля получают значения по умолчанию', () => {
@@ -104,7 +116,10 @@ test('create: categoryId заменяет обязательное поле cate
   assert.equal(category, 'slot');
   assert.deepEqual(validateCreate({ ...noCategory, categoryId: 3 }), { ...noCategory, categoryId: 3 });
   // без category и без categoryId - по-прежнему ошибка по полю category
-  assert.throws(() => validateCreate(noCategory), (err) => err.details.some((d) => d.field === 'category'));
+  assert.throws(
+    () => validateCreate(noCategory),
+    (err) => err.details.some((d) => d.field === 'category')
+  );
   // categoryId: null не снимает требование category
   assert.throws(() => validateCreate({ ...noCategory, categoryId: null }), { code: 'VALIDATION_ERROR' });
 });
@@ -134,13 +149,22 @@ test('legacyCategoryFor: слаг из списка либо other', () => {
 // ---- PATCH: отрицательные и некорректные числа ----
 
 test('patch: отрицательные и нечисловые значения отклоняются', () => {
-  for (const body of [{ minBet: -5 }, { maxBet: -1 }, { rtp: -96 }, { tablesCount: -1 }, { maxBet: NaN }, { minBet: null }]) {
+  for (const body of [
+    { minBet: -5 },
+    { maxBet: -1 },
+    { rtp: -96 },
+    { tablesCount: -1 },
+    { maxBet: NaN },
+    { minBet: null },
+  ]) {
     assert.throws(() => validatePatch(body), { code: 'VALIDATION_ERROR' }, JSON.stringify(body));
   }
 });
 
 test('patch: mass assignment - id и служебные поля отбрасываются', () => {
-  assert.deepEqual(validatePatch({ isActive: true, id: 9, createdAt: 'x', __proto__: { isAdmin: true } }), { isActive: true });
+  assert.deepEqual(validatePatch({ isActive: true, id: 9, createdAt: 'x', __proto__: { isAdmin: true } }), {
+    isActive: true,
+  });
 });
 
 // ---- Casino game: provider, volatility, типы игр ----
@@ -156,10 +180,18 @@ test('игра: provider и volatility нормализуются и валид�
   assert.equal(data.provider, 'Royal Games');
   assert.equal(data.volatility, 'HIGH');
   for (const volatility of ['EXTREME', '', 5, null]) {
-    assert.throws(() => validateCreate({ ...valid, volatility }), { code: 'VALIDATION_ERROR' }, String(volatility));
+    assert.throws(
+      () => validateCreate({ ...valid, volatility }),
+      { code: 'VALIDATION_ERROR' },
+      String(volatility)
+    );
   }
   for (const provider of ['', '   ', 'x'.repeat(101), 7, null]) {
-    assert.throws(() => validateCreate({ ...valid, provider }), { code: 'VALIDATION_ERROR' }, String(provider));
+    assert.throws(
+      () => validateCreate({ ...valid, provider }),
+      { code: 'VALIDATION_ERROR' },
+      String(provider)
+    );
   }
 });
 

@@ -37,7 +37,20 @@ const EDITABLE_FIELDS = [
 ];
 const REQUIRED_ON_CREATE = ['name', 'category', 'minBet', 'maxBet', 'rtp'];
 
-const SORTABLE_FIELDS = ['id', 'name', 'provider', 'volatility', 'category', 'categoryId', 'provider', 'volatility', 'minBet', 'maxBet', 'rtp', 'createdAt'];
+const SORTABLE_FIELDS = [
+  'id',
+  'name',
+  'provider',
+  'volatility',
+  'category',
+  'categoryId',
+  'provider',
+  'volatility',
+  'minBet',
+  'maxBet',
+  'rtp',
+  'createdAt',
+];
 
 const DEFAULT_PROVIDER = 'Unknown';
 const MIN_BET = 0.01;
@@ -94,7 +107,8 @@ const validators = {
   maxBet: money,
   rtp(value) {
     if (typeof value !== 'number' || !Number.isFinite(value)) return { error: 'должно быть числом' };
-    if (value < MIN_RTP || value > MAX_RTP) return { error: `должно быть в диапазоне ${MIN_RTP}..${MAX_RTP}` };
+    if (value < MIN_RTP || value > MAX_RTP)
+      return { error: `должно быть в диапазоне ${MIN_RTP}..${MAX_RTP}` };
     if (!hasMaxTwoDecimals(value)) return { error: 'допускается не более 2 знаков после запятой' };
     return { value };
   },
@@ -167,7 +181,12 @@ function validateListQuery(query = {}) {
 
   const filters = {};
   if (query.search !== undefined) {
-    if (typeof query.search !== 'string' || query.search.trim().length < 1 || query.search.trim().length > 100) details.push({ field: 'search', message: 'длина от 1 до 100 символов' });
+    if (
+      typeof query.search !== 'string' ||
+      query.search.trim().length < 1 ||
+      query.search.trim().length > 100
+    )
+      details.push({ field: 'search', message: 'длина от 1 до 100 символов' });
     else filters.search = query.search.trim();
   }
   if (query.category !== undefined) {

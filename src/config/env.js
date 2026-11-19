@@ -17,7 +17,8 @@ const toBoundedInt = (value, fallback, min, max, name) => {
   if (value === undefined) return fallback;
   if (!/^\d+$/.test(value)) throw new Error(`${name} должен быть целым числом`);
   const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) throw new Error(`${name} должен быть в диапазоне ${min}..${max}`);
+  if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max)
+    throw new Error(`${name} должен быть в диапазоне ${min}..${max}`);
   return parsed;
 };
 
@@ -45,19 +46,32 @@ const env = {
 env.isProduction = env.nodeEnv === 'production';
 
 if (env.isProduction) {
-  const missing = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'JWT_SECRET'].filter((key) => !process.env[key]);
+  const missing = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'JWT_SECRET'].filter(
+    (key) => !process.env[key]
+  );
   if (missing.length > 0) {
     throw new Error(`Не заданы обязательные переменные окружения: ${missing.join(', ')}`);
   }
 }
 
-if (env.auth.jwtSecret && (Buffer.byteLength(env.auth.jwtSecret) < 32 || env.auth.jwtSecret.startsWith('replace_with_'))) {
+if (
+  env.auth.jwtSecret &&
+  (Buffer.byteLength(env.auth.jwtSecret) < 32 || env.auth.jwtSecret.startsWith('replace_with_'))
+) {
   throw new Error('JWT_SECRET должен содержать не менее 32 байт');
 }
 const accessTtlMatch = /^(\d+)(s|m|h|d)$/.exec(env.auth.accessTtl);
-const accessTtlSeconds = accessTtlMatch && Number(accessTtlMatch[1]) * ({ s: 1, m: 60, h: 3600, d: 86400 }[accessTtlMatch[2]]);
-if (!accessTtlMatch || !Number.isSafeInteger(accessTtlSeconds) || accessTtlSeconds < 1 || accessTtlSeconds > 86400) {
-  throw new Error('ACCESS_TOKEN_TTL должен быть временем в секундах, минутах, часах или днях и не превышать 24 часа');
+const accessTtlSeconds =
+  accessTtlMatch && Number(accessTtlMatch[1]) * { s: 1, m: 60, h: 3600, d: 86400 }[accessTtlMatch[2]];
+if (
+  !accessTtlMatch ||
+  !Number.isSafeInteger(accessTtlSeconds) ||
+  accessTtlSeconds < 1 ||
+  accessTtlSeconds > 86400
+) {
+  throw new Error(
+    'ACCESS_TOKEN_TTL должен быть временем в секундах, минутах, часах или днях и не превышать 24 часа'
+  );
 }
 
 module.exports = env;

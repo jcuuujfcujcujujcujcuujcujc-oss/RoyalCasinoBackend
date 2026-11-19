@@ -8,33 +8,33 @@
 
 ## Предметная область
 
-| Casino-термин | Реализация | Внутреннее имя (совместимость) |
-|---|---|---|
-| Casino Game (игра каталога) | `/api/games` | модуль `products`, таблица `products`, алиас `/api/products` |
-| Casino Category | `/api/categories` | модуль `game-categories`, таблица `game_categories`, алиас `/api/game-categories` |
-| Casino Player | `/api/players` | модуль `players`, таблица `players` |
-| Virtual Credits | `/api/players/:id/credits` | модуль `player-credits`, таблица `player_credit_profiles` |
-| Casino Statistics | `/api/casino/statistics` | модуль `statistics` (только чтение) |
+| Casino-термин               | Реализация                 | Внутреннее имя (совместимость)                                                    |
+| --------------------------- | -------------------------- | --------------------------------------------------------------------------------- |
+| Casino Game (игра каталога) | `/api/games`               | модуль `products`, таблица `products`, алиас `/api/products`                      |
+| Casino Category             | `/api/categories`          | модуль `game-categories`, таблица `game_categories`, алиас `/api/game-categories` |
+| Casino Player               | `/api/players`             | модуль `players`, таблица `players`                                               |
+| Virtual Credits             | `/api/players/:id/credits` | модуль `player-credits`, таблица `player_credit_profiles`                         |
+| Casino Statistics           | `/api/casino/statistics`   | модуль `statistics` (только чтение)                                               |
 
 Внутренние идентификаторы (`Product`, `GameCategory`) сохранены намеренно: переименование не даёт технической выгоды
 и ломало бы существующие миграции и клиентов. Casino-терминология применена в публичном API и документации.
 
 ### Игра (Casino Game)
 
-| Поле | Тип | Правила |
-|---|---|---|
-| `id` | integer | генерируется БД |
-| `name` | string | обязательное, 1..255 |
-| `description` | string \| null | до 2000 |
-| `provider` | string | 1..100, по умолчанию `Unknown` |
-| `category` | string | тип игры: `slot`, `roulette`, `blackjack`, `poker`, `baccarat`, `dice`, `lottery`, `other` (обязательно, если нет `categoryId`) |
-| `categoryId` | integer \| null | ссылка на категорию (FK) |
-| `volatility` | string | `LOW` \| `MEDIUM` \| `HIGH` (регистр входа не важен), по умолчанию `MEDIUM` |
-| `minBet`, `maxBet` | number | виртуальные кредиты, 0.01..1 000 000, до 2 знаков, `minBet <= maxBet` |
-| `rtp` | number | 0..100 (% возврата), до 2 знаков |
-| `tablesCount` | integer | 0..1000 |
-| `isActive` | boolean | доступность игры, по умолчанию `true` |
-| `createdAt`, `updatedAt` | datetime | |
+| Поле                     | Тип             | Правила                                                                                                                         |
+| ------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                     | integer         | генерируется БД                                                                                                                 |
+| `name`                   | string          | обязательное, 1..255                                                                                                            |
+| `description`            | string \| null  | до 2000                                                                                                                         |
+| `provider`               | string          | 1..100, по умолчанию `Unknown`                                                                                                  |
+| `category`               | string          | тип игры: `slot`, `roulette`, `blackjack`, `poker`, `baccarat`, `dice`, `lottery`, `other` (обязательно, если нет `categoryId`) |
+| `categoryId`             | integer \| null | ссылка на категорию (FK)                                                                                                        |
+| `volatility`             | string          | `LOW` \| `MEDIUM` \| `HIGH` (регистр входа не важен), по умолчанию `MEDIUM`                                                     |
+| `minBet`, `maxBet`       | number          | виртуальные кредиты, 0.01..1 000 000, до 2 знаков, `minBet <= maxBet`                                                           |
+| `rtp`                    | number          | 0..100 (% возврата), до 2 знаков                                                                                                |
+| `tablesCount`            | integer         | 0..1000                                                                                                                         |
+| `isActive`               | boolean         | доступность игры, по умолчанию `true`                                                                                           |
+| `createdAt`, `updatedAt` | datetime        |                                                                                                                                 |
 
 Правило `minBet <= maxBet` проверяется в валидации, в сервисе для PATCH (с блокировкой строки), в модели и CHECK в БД.
 `category` и `categoryId` согласованы: подробности в `docs/API.md`.
@@ -67,15 +67,15 @@ npm run db:migrate:status     # статус
 npm run db:migrate:undo       # откатить последнюю
 ```
 
-| Миграция | Изменение |
-|---|---|
-| `20260101000000-create-products` | таблица `products` |
-| `20260201000000-create-game-categories` | `game_categories`, начальные категории |
-| `20260201000100-add-category-id-to-products` | `products.category_id` + FK `ON DELETE RESTRICT`, перенос данных |
-| `20260201000200-create-players` | `players`, уникальность nickname/email |
-| `20260301000000-casino-game-fields` | `provider`, `volatility`, типы `dice`/`lottery`, RTP 0..100, категории dice/lottery |
-| `20260301000100-create-player-credit-profiles` | `player_credit_profiles`, FK `ON DELETE CASCADE`, CHECK `balance >= 0`, стартовые профили |
-| `20260401000000-add-auth-audit` | `users`, `roles`, `user_roles`, hashed `refresh_tokens`, `audit_logs`, nullable unique `players.user_id` |
+| Миграция                                       | Изменение                                                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `20260101000000-create-products`               | таблица `products`                                                                                       |
+| `20260201000000-create-game-categories`        | `game_categories`, начальные категории                                                                   |
+| `20260201000100-add-category-id-to-products`   | `products.category_id` + FK `ON DELETE RESTRICT`, перенос данных                                         |
+| `20260201000200-create-players`                | `players`, уникальность nickname/email                                                                   |
+| `20260301000000-casino-game-fields`            | `provider`, `volatility`, типы `dice`/`lottery`, RTP 0..100, категории dice/lottery                      |
+| `20260301000100-create-player-credit-profiles` | `player_credit_profiles`, FK `ON DELETE CASCADE`, CHECK `balance >= 0`, стартовые профили                |
+| `20260401000000-add-auth-audit`                | `users`, `roles`, `user_roles`, hashed `refresh_tokens`, `audit_logs`, nullable unique `players.user_id` |
 
 Схема меняется только миграциями; `sequelize.sync()` не используется.
 
@@ -89,6 +89,16 @@ NODE_ENV=test npm run db:migrate
 npm run test:integration      # очищает таблицы тестовой БД!
 npm test                      # всё (интеграционные пропускаются без тестовой БД)
 ```
+
+Проверки качества:
+
+```bash
+npm run lint
+npm run format:check
+npm run format                  # применить форматирование Prettier
+```
+
+ESLint и Prettier — только инструменты разработки; `@eslint/js` и `globals` подключают рекомендуемые правила и Node.js globals для flat config. `pg` и `pg-hstore` нужны Sequelize PostgreSQL dialect и загружаются динамически, поэтому статический depcheck может ошибочно пометить их неиспользуемыми.
 
 ## Эндпоинты (подробно с примерами: `docs/API.md`)
 
@@ -130,8 +140,13 @@ GET  /api/openapi.json                      (OpenAPI 3.0)
 Формат ошибки:
 
 ```json
-{ "error": { "code": "VALIDATION_ERROR", "message": "Ошибка валидации",
-  "details": [ { "field": "maxBet", "message": "не может быть меньше minBet" } ] } }
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Ошибка валидации",
+    "details": [{ "field": "maxBet", "message": "не может быть меньше minBet" }]
+  }
+}
 ```
 
 ## Структура

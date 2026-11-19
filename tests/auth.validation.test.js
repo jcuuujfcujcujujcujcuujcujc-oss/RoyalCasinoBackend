@@ -9,10 +9,19 @@ test('регистрация нормализует email и принимает 
 });
 
 test('регистрация отклоняет пароль длиннее лимита bcrypt в байтах', () => {
-  assert.throws(() => validateCredentials('player@example.test', 'а'.repeat(37)), (error) => error instanceof AppError && error.statusCode === 422);
+  assert.throws(
+    () => validateCredentials('player@example.test', 'а'.repeat(37)),
+    (error) => error instanceof AppError && error.statusCode === 422
+  );
 });
 
 test('регистрация отклоняет короткий пароль и неверный email', () => {
-  assert.throws(() => validateCredentials('not-an-email', 'LongPassword123'), (error) => error.statusCode === 422);
-  assert.throws(() => validateCredentials('player@example.test', 'short'), (error) => error.statusCode === 422);
+  assert.throws(
+    () => validateCredentials('not-an-email', 'LongPassword123'),
+    (error) => error.statusCode === 422
+  );
+  assert.throws(
+    () => validateCredentials('player@example.test', 'short'),
+    (error) => error.statusCode === 422
+  );
 });

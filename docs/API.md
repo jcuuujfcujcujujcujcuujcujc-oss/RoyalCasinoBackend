@@ -8,21 +8,45 @@
 ### Создание — `POST /api/games` → 201, `Location: /api/games/{id}`
 
 ```json
-{ "name": "Royal Fortune Slots", "description": "Educational virtual casino slot game",
-  "provider": "Royal Games", "category": "slot", "volatility": "HIGH",
-  "minBet": 0.1, "maxBet": 100, "rtp": 96.5, "tablesCount": 0, "isActive": true }
+{
+  "name": "Royal Fortune Slots",
+  "description": "Educational virtual casino slot game",
+  "provider": "Royal Games",
+  "category": "slot",
+  "volatility": "HIGH",
+  "minBet": 0.1,
+  "maxBet": 100,
+  "rtp": 96.5,
+  "tablesCount": 0,
+  "isActive": true
+}
 ```
 
 Ответ:
 
 ```json
-{ "data": { "id": 1, "name": "Royal Fortune Slots", "description": "Educational virtual casino slot game",
-  "provider": "Royal Games", "category": "slot", "categoryId": 1, "volatility": "HIGH",
-  "minBet": 0.1, "maxBet": 100, "rtp": 96.5, "tablesCount": 0, "isActive": true,
-  "createdAt": "…", "updatedAt": "…" } }
+{
+  "data": {
+    "id": 1,
+    "name": "Royal Fortune Slots",
+    "description": "Educational virtual casino slot game",
+    "provider": "Royal Games",
+    "category": "slot",
+    "categoryId": 1,
+    "volatility": "HIGH",
+    "minBet": 0.1,
+    "maxBet": 100,
+    "rtp": 96.5,
+    "tablesCount": 0,
+    "isActive": true,
+    "createdAt": "…",
+    "updatedAt": "…"
+  }
+}
 ```
 
 Связь с категорией:
+
 - передан только `category` → `categoryId` подбирается по имени категории (без учёта регистра);
 - передан `categoryId` → `category` выводится из имени категории (`other`, если имя не из списка типов); `category`
   в запросе, если указано, должно совпадать, иначе 422; несуществующий `categoryId` → 422;
@@ -38,8 +62,10 @@ GET /api/games?provider=royal%20games&volatility=high&isActive=true&sortBy=rtp&o
 ```
 
 ```json
-{ "data": [ { "id": 1, "name": "Royal Fortune Slots", "…": "…" } ],
-  "meta": { "page": 1, "limit": 10, "total": 1, "totalPages": 1 } }
+{
+  "data": [{ "id": 1, "name": "Royal Fortune Slots", "…": "…" }],
+  "meta": { "page": 1, "limit": 10, "total": 1, "totalPages": 1 }
+}
 ```
 
 ### Остальное
@@ -50,9 +76,16 @@ GET /api/games?provider=royal%20games&volatility=high&isActive=true&sortBy=rtp&o
 Пример ошибки валидации (422):
 
 ```json
-{ "error": { "code": "VALIDATION_ERROR", "message": "Ошибка валидации",
-  "details": [ { "field": "volatility", "message": "допустимо: LOW, MEDIUM, HIGH" },
-               { "field": "rtp", "message": "должно быть в диапазоне 0..100" } ] } }
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Ошибка валидации",
+    "details": [
+      { "field": "volatility", "message": "допустимо: LOW, MEDIUM, HIGH" },
+      { "field": "rtp", "message": "должно быть в диапазоне 0..100" }
+    ]
+  }
+}
 ```
 
 ## Категории (`/api/categories`, алиас `/api/game-categories`)
@@ -118,11 +151,11 @@ GET /api/games?provider=royal%20games&volatility=high&isActive=true&sortBy=rtp&o
 
 ### Матрица ролей
 
-| Роль | Возможности |
-|---|---|
-| `PLAYER` | Публичный каталог; чтение и изменение собственного профиля; чтение собственного профиля кредитов |
-| `MANAGER` | Каталог игр/категорий, управление играми и категориями, список игроков, статистика |
-| `ADMIN` | Полный доступ, удаление игр/категорий, управление ролями и блокировкой пользователей, аудит |
+| Роль      | Возможности                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------ |
+| `PLAYER`  | Публичный каталог; чтение и изменение собственного профиля; чтение собственного профиля кредитов |
+| `MANAGER` | Каталог игр/категорий, управление играми и категориями, список игроков, статистика               |
+| `ADMIN`   | Полный доступ, удаление игр/категорий, управление ролями и блокировкой пользователей, аудит      |
 
 Списки игроков и финансовая статистика требуют Bearer-токен. Чужой профиль игроку отвечает 404. Поля `passwordHash`, токены и секреты API не возвращаются. При блокировке пользователя refresh-сессии отзываются; проверка активности при каждом защищённом запросе делает недействительными и действующие Access Tokens.
 

@@ -64,9 +64,11 @@ const booleanValidator = (value) =>
 function textValidator({ min = 0, max, nullable = false }) {
   return (value) => {
     if (value === null && nullable) return { value: null };
-    if (typeof value !== 'string') return { error: nullable ? 'должно быть строкой или null' : 'должно быть строкой' };
+    if (typeof value !== 'string')
+      return { error: nullable ? 'должно быть строкой или null' : 'должно быть строкой' };
     const trimmed = value.trim();
-    if (trimmed.length < min) return { error: min === 1 ? 'не может быть пустым' : `не короче ${min} символов` };
+    if (trimmed.length < min)
+      return { error: min === 1 ? 'не может быть пустым' : `не короче ${min} символов` };
     if (trimmed.length > max) return { error: `не длиннее ${max} символов` };
     return { value: trimmed };
   };
@@ -84,10 +86,11 @@ function readPaging(query, details) {
     }
     return Number(raw);
   };
-    const page = readInt('page', 1, 1, 1000000);
-    const limit = readInt('limit', 20, 1, 100);
-    if ((page - 1) * limit > 1000000) details.push({ field: 'page', message: 'смещение страницы не должно превышать 1000000 записей' });
-    return { page, limit };
+  const page = readInt('page', 1, 1, 1000000);
+  const limit = readInt('limit', 20, 1, 100);
+  if ((page - 1) * limit > 1000000)
+    details.push({ field: 'page', message: 'смещение страницы не должно превышать 1000000 записей' });
+  return { page, limit };
 }
 
 function readSorting(query, sortable, details) {
@@ -113,7 +116,8 @@ function readBooleanFilter(query, name, filters, details) {
 function readIdFilter(query, name, filters, details) {
   if (query[name] === undefined) return;
   const raw = query[name];
-  if (typeof raw === 'string' && /^[1-9]\d{0,9}$/.test(raw) && Number(raw) <= MAX_INT) filters[name] = Number(raw);
+  if (typeof raw === 'string' && /^[1-9]\d{0,9}$/.test(raw) && Number(raw) <= MAX_INT)
+    filters[name] = Number(raw);
   else details.push({ field: name, message: 'должно быть положительным целым числом' });
 }
 

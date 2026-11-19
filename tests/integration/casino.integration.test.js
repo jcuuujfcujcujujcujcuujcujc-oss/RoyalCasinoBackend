@@ -78,7 +78,13 @@ test('игры: RTP 0 и 100 допустимы, 100.01 и -1 -> 422; volatility
 test('игры: фильтры provider (без учёта регистра), volatility, isActive, category, сортировка и пагинация', async (t) => {
   if (!guard(t)) return;
   await api('POST', '/api/games', slot);
-  await api('POST', '/api/games', { ...slot, name: 'B', provider: 'Other Studio', volatility: 'LOW', isActive: false });
+  await api('POST', '/api/games', {
+    ...slot,
+    name: 'B',
+    provider: 'Other Studio',
+    volatility: 'LOW',
+    isActive: false,
+  });
   await api('POST', '/api/games', { ...slot, name: 'C', provider: 'Other Studio', category: 'roulette' });
   const total = (q) => api('GET', `/api/games${q}`).then((r) => r.body.meta.total);
   assert.equal(await total('?provider=royal%20games'), 1);
@@ -94,10 +100,19 @@ test('игры: фильтры provider (без учёта регистра), vo
 test('игры: PATCH provider/volatility, PUT сбрасывает необязательные поля к значениям по умолчанию', async (t) => {
   if (!guard(t)) return;
   const { body } = await api('POST', '/api/games', slot);
-  const patched = await api('PATCH', `/api/games/${body.data.id}`, { volatility: 'low', provider: 'New Studio' });
+  const patched = await api('PATCH', `/api/games/${body.data.id}`, {
+    volatility: 'low',
+    provider: 'New Studio',
+  });
   assert.equal(patched.body.data.volatility, 'LOW');
   assert.equal(patched.body.data.provider, 'New Studio');
-  const put = await api('PUT', `/api/games/${body.data.id}`, { name: 'X', category: 'slot', minBet: 1, maxBet: 2, rtp: 90 });
+  const put = await api('PUT', `/api/games/${body.data.id}`, {
+    name: 'X',
+    category: 'slot',
+    minBet: 1,
+    maxBet: 2,
+    rtp: 90,
+  });
   assert.equal(put.body.data.provider, 'Unknown');
   assert.equal(put.body.data.volatility, 'MEDIUM');
 });
@@ -130,7 +145,11 @@ test('кредиты: PATCH/PUT игрока не меняет баланс; bal
   if (!guard(t)) return;
   const p = (await api('POST', '/api/players', { nickname: 'Cheater', email: 'c@royal.test' })).body.data;
   assert.equal((await api('PATCH', `/api/players/${p.id}`, { balance: 1e6 })).status, 422);
-  const mixed = await api('PATCH', `/api/players/${p.id}`, { isActive: false, balance: 1e6, creditProfile: { balance: 1e6 } });
+  const mixed = await api('PATCH', `/api/players/${p.id}`, {
+    isActive: false,
+    balance: 1e6,
+    creditProfile: { balance: 1e6 },
+  });
   assert.equal(mixed.status, 200);
   assert.equal((await api('GET', `/api/players/${p.id}/credits`)).body.data.balance, 1000);
 });
@@ -139,11 +158,15 @@ test('кредиты: отрицательный баланс запрещён �
   if (!guard(t)) return;
   const p = (await api('POST', '/api/players', { nickname: 'Dave', email: 'd@royal.test' })).body.data;
   await assert.rejects(
-    ctx.sequelize.query('UPDATE player_credit_profiles SET balance = -1 WHERE player_id = :id', { replacements: { id: p.id } }),
+    ctx.sequelize.query('UPDATE player_credit_profiles SET balance = -1 WHERE player_id = :id', {
+      replacements: { id: p.id },
+    }),
     (e) => e.parent && e.parent.code === '23514'
   );
   assert.equal((await api('DELETE', `/api/players/${p.id}`)).status, 204);
-  const [rows] = await ctx.sequelize.query('SELECT 1 FROM player_credit_profiles WHERE player_id = :id', { replacements: { id: p.id } });
+  const [rows] = await ctx.sequelize.query('SELECT 1 FROM player_credit_profiles WHERE player_id = :id', {
+    replacements: { id: p.id },
+  });
   assert.equal(rows.length, 0);
 });
 
@@ -151,7 +174,9 @@ test('кредиты: дубликат игрока не оставляет «о
   if (!guard(t)) return;
   await api('POST', '/api/players', { nickname: 'Eve', email: 'e@royal.test' });
   assert.equal((await api('POST', '/api/players', { nickname: 'eve', email: 'x@royal.test' })).status, 409);
-  const [[{ count }]] = await ctx.sequelize.query('SELECT COUNT(*)::int AS count FROM player_credit_profiles');
+  const [[{ count }]] = await ctx.sequelize.query(
+    'SELECT COUNT(*)::int AS count FROM player_credit_profiles'
+  );
   assert.equal(count, 1);
 });
 
@@ -159,7 +184,13 @@ test('кредиты: дубликат игрока не оставляет «о
 test('статистика: игроки, игры, категории, провайдеры, сумма виртуальных кредитов', async (t) => {
   if (!guard(t)) return;
   await api('POST', '/api/games', slot);
-  await api('POST', '/api/games', { ...slot, name: 'Dice', category: 'dice', provider: 'Other Studio', isActive: false });
+  await api('POST', '/api/games', {
+    ...slot,
+    name: 'Dice',
+    category: 'dice',
+    provider: 'Other Studio',
+    isActive: false,
+  });
   await api('POST', '/api/players', { nickname: 'P01', email: 'p1@royal.test' });
   await api('POST', '/api/players', { nickname: 'P02', email: 'p2@royal.test' });
 
@@ -199,8 +230,9 @@ test('категории: casino-путь /api/categories, дубликат -> 4
   assert.equal((await api('POST', '/api/categories', { name: 'KENO' })).status, 409);
   // categoryId и legacy-строка category не должны противоречить друг другу,
   // поэтому при назначении новой категории слаг из шаблона slot убираем.
-  const { category, ...rest } = slot;
-  const g = await api('POST', '/api/games', { ...rest, categoryId: created.body.data.id });
+  const slotWithoutCategory = { ...slot };
+  delete slotWithoutCategory.category;
+  const g = await api('POST', '/api/games', { ...slotWithoutCategory, categoryId: created.body.data.id });
   assert.equal(g.status, 201);
   assert.equal((await api('DELETE', `/api/categories/${created.body.data.id}`)).status, 409);
 });

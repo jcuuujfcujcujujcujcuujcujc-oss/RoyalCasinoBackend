@@ -13,12 +13,18 @@ module.exports = {
       // Новые поля с DEFAULT: существующие записи получают 'Unknown' / 'MEDIUM' (данные не теряются)
       await run("ALTER TABLE products ADD COLUMN provider VARCHAR(100) NOT NULL DEFAULT 'Unknown'");
       await run("ALTER TABLE products ADD COLUMN volatility VARCHAR(6) NOT NULL DEFAULT 'MEDIUM'");
-      await run("ALTER TABLE products ADD CONSTRAINT products_provider_not_blank CHECK (length(btrim(provider)) > 0)");
-      await run(`ALTER TABLE products ADD CONSTRAINT products_volatility_valid CHECK (volatility IN ('LOW', 'MEDIUM', 'HIGH'))`);
+      await run(
+        'ALTER TABLE products ADD CONSTRAINT products_provider_not_blank CHECK (length(btrim(provider)) > 0)'
+      );
+      await run(
+        `ALTER TABLE products ADD CONSTRAINT products_volatility_valid CHECK (volatility IN ('LOW', 'MEDIUM', 'HIGH'))`
+      );
 
       // Новые типы игр: dice, lottery. Старый набор - подмножество нового, поэтому все строки остаются валидными.
       await run('ALTER TABLE products DROP CONSTRAINT products_category_valid');
-      await run(`ALTER TABLE products ADD CONSTRAINT products_category_valid CHECK (category IN (${list(NEW_CATEGORIES)}))`);
+      await run(
+        `ALTER TABLE products ADD CONSTRAINT products_category_valid CHECK (category IN (${list(NEW_CATEGORIES)}))`
+      );
 
       // RTP: допустимый диапазон 0..100 (было 50..99.99 - шире, значит старые строки валидны)
       await run('ALTER TABLE products DROP CONSTRAINT products_rtp_range');
@@ -40,7 +46,9 @@ module.exports = {
       await run('ALTER TABLE products DROP CONSTRAINT products_rtp_range');
       await run('ALTER TABLE products ADD CONSTRAINT products_rtp_range CHECK (rtp >= 50 AND rtp <= 99.99)');
       await run('ALTER TABLE products DROP CONSTRAINT products_category_valid');
-      await run(`ALTER TABLE products ADD CONSTRAINT products_category_valid CHECK (category IN (${list(OLD_CATEGORIES)}))`);
+      await run(
+        `ALTER TABLE products ADD CONSTRAINT products_category_valid CHECK (category IN (${list(OLD_CATEGORIES)}))`
+      );
       await run('ALTER TABLE products DROP CONSTRAINT IF EXISTS products_volatility_valid');
       await run('ALTER TABLE products DROP CONSTRAINT IF EXISTS products_provider_not_blank');
       await run('ALTER TABLE products DROP COLUMN IF EXISTS volatility');

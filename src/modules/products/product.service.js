@@ -43,9 +43,14 @@ async function applyCategory(data, transaction) {
 // Фильтр по провайдеру не зависит от регистра; остальные фильтры - точное совпадение
 function buildWhere({ provider, search, ...rest }) {
   const where = { ...rest };
-  if (search !== undefined) where[Op.or] = ['name', 'description', 'provider'].map((field) => ({ [field]: { [Op.iLike]: `%${search.replace(/[\\%_]/g, '\\$&')}%` } }));
+  if (search !== undefined)
+    where[Op.or] = ['name', 'description', 'provider'].map((field) => ({
+      [field]: { [Op.iLike]: `%${search.replace(/[\\%_]/g, '\\$&')}%` },
+    }));
   if (provider !== undefined) {
-    where[Op.and] = [sequelize.where(sequelize.fn('lower', sequelize.col('provider')), provider.toLowerCase())];
+    where[Op.and] = [
+      sequelize.where(sequelize.fn('lower', sequelize.col('provider')), provider.toLowerCase()),
+    ];
   }
   return where;
 }
@@ -55,7 +60,10 @@ async function list({ page, limit, sortBy, order, filters }) {
     where: buildWhere(filters),
     limit,
     offset: (page - 1) * limit,
-    order: [[sortBy, order.toUpperCase()], ['id', 'ASC']],
+    order: [
+      [sortBy, order.toUpperCase()],
+      ['id', 'ASC'],
+    ],
   });
   return {
     data: rows,
@@ -72,7 +80,16 @@ function create(data, userId) {
     const prepared = await applyCategory(data, transaction);
     // fields - второй уровень защиты от mass assignment
     const product = await Product.create(prepared, { fields: EDITABLE_FIELDS, transaction });
-    await record({ userId, action: 'CREATE_GAME', entityType: 'Product', entityId: product.id, details: { name: product.name } }, transaction);
+    await record(
+      {
+        userId,
+        action: 'CREATE_GAME',
+        entityType: 'Product',
+        entityId: product.id,
+        details: { name: product.name },
+      },
+      transaction
+    );
     return product;
   });
 }
@@ -82,7 +99,16 @@ function replace(id, data, userId) {
     const product = await findOrFail(id, { transaction, lock: transaction.LOCK.UPDATE });
     const prepared = await applyCategory(data, transaction);
     await product.update(prepared, { fields: EDITABLE_FIELDS, transaction });
-    await record({ userId, action: 'REPLACE_GAME', entityType: 'Product', entityId: id, details: { fields: Object.keys(prepared) } }, transaction);
+    await record(
+      {
+        userId,
+        action: 'REPLACE_GAME',
+        entityType: 'Product',
+        entityId: id,
+        details: { fields: Object.keys(prepared) },
+      },
+      transaction
+    );
     return product;
   });
 }
@@ -95,7 +121,16 @@ function update(id, data, userId) {
     assertBetRange(data.minBet ?? product.minBet, data.maxBet ?? product.maxBet);
     const prepared = await applyCategory(data, transaction);
     await product.update(prepared, { fields: EDITABLE_FIELDS, transaction });
-    await record({ userId, action: 'UPDATE_GAME', entityType: 'Product', entityId: id, details: { fields: Object.keys(prepared) } }, transaction);
+    await record(
+      {
+        userId,
+        action: 'UPDATE_GAME',
+        entityType: 'Product',
+        entityId: id,
+        details: { fields: Object.keys(prepared) },
+      },
+      transaction
+    );
     return product;
   });
 }
@@ -104,7 +139,10 @@ async function remove(id, userId) {
   await sequelize.transaction(async (transaction) => {
     const product = await findOrFail(id, { transaction, lock: transaction.LOCK.UPDATE });
     await product.destroy({ transaction });
-    await record({ userId, action: 'DELETE_GAME', entityType: 'Product', entityId: id, details: {} }, transaction);
+    await record(
+      { userId, action: 'DELETE_GAME', entityType: 'Product', entityId: id, details: {} },
+      transaction
+    );
   });
 }
 

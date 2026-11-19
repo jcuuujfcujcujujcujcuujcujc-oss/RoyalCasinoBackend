@@ -25,7 +25,11 @@ module.exports = (sequelize) => {
   );
 
   PlayerCreditProfile.associate = (models) => {
-    PlayerCreditProfile.belongsTo(models.Player, { foreignKey: 'playerId', as: 'player', onDelete: 'CASCADE' });
+    PlayerCreditProfile.belongsTo(models.Player, {
+      foreignKey: 'playerId',
+      as: 'player',
+      onDelete: 'CASCADE',
+    });
   };
 
   return PlayerCreditProfile;

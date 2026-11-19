@@ -19,7 +19,11 @@ module.exports = (sequelize) => {
 
   Player.associate = (models) => {
     // Профиль кредитов удаляется вместе с игроком (ON DELETE CASCADE в БД)
-    Player.hasOne(models.PlayerCreditProfile, { foreignKey: 'playerId', as: 'creditProfile', onDelete: 'CASCADE' });
+    Player.hasOne(models.PlayerCreditProfile, {
+      foreignKey: 'playerId',
+      as: 'creditProfile',
+      onDelete: 'CASCADE',
+    });
   };
 
   return Player;

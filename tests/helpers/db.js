@@ -7,7 +7,17 @@
 const { CATEGORIES } = require('../../src/modules/products/product.validation');
 const crypto = require('node:crypto');
 
-const TABLES = ['products', 'game_categories', 'players', 'player_credit_profiles', 'users', 'roles', 'user_roles', 'refresh_tokens', 'audit_logs'];
+const TABLES = [
+  'products',
+  'game_categories',
+  'players',
+  'player_credit_profiles',
+  'users',
+  'roles',
+  'user_roles',
+  'refresh_tokens',
+  'audit_logs',
+];
 
 async function connect() {
   process.env.JWT_SECRET ||= crypto.randomBytes(48).toString('base64url');
@@ -18,11 +28,14 @@ async function connect() {
     return { ok: false, reason: `зависимости не установлены: ${err.message.split('\n')[0]}` };
   }
   if (!/_test$/.test(env.db.name)) {
-    return { ok: false, reason: `DB_NAME="${env.db.name}" не оканчивается на _test: интеграционные тесты пропущены` };
+    return {
+      ok: false,
+      reason: `DB_NAME="${env.db.name}" не оканчивается на _test: интеграционные тесты пропущены`,
+    };
   }
   try {
     const models = require('../../src/models');
-    const { sequelize, User, Role, UserRole } = models;
+    const { sequelize } = models;
     await sequelize.authenticate();
     // showAllTables() возвращает имена таблиц текущей схемы. Раньше здесь выполнялся
     // SELECT table_name ... и результат разбирался как [rows]; для одноколоночного
@@ -44,26 +57,42 @@ async function connect() {
   const { sequelize, User, Role, UserRole } = models;
   const email = 'integration-admin@example.test';
   let admin = await User.findOne({ where: { email } });
-  if (!admin) admin = await User.create({ email, passwordHash: await require('bcryptjs').hash(crypto.randomBytes(32).toString('hex'), 10) });
+  if (!admin)
+    admin = await User.create({
+      email,
+      passwordHash: await require('bcryptjs').hash(crypto.randomBytes(32).toString('hex'), 10),
+    });
   const role = await Role.findOne({ where: { code: 'ADMIN' } });
   await UserRole.findOrCreate({ where: { userId: admin.id, roleId: role.id } });
-  const token = require('jsonwebtoken').sign({ sub: String(admin.id) }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '15m', issuer: 'royal-casino-backend', audience: 'royal-casino-api' });
+  const token = require('jsonwebtoken').sign({ sub: String(admin.id) }, process.env.JWT_SECRET, {
+    algorithm: 'HS256',
+    expiresIn: '15m',
+    issuer: 'royal-casino-backend',
+    audience: 'royal-casino-api',
+  });
   return { ok: true, sequelize, token };
 }
 
 // Чистое состояние; категории пересеваются тем же набором, что объявлен в product.validation.js,
 // чтобы список тестовых категорий не расходился с бизнес-валидацией.
 async function reset(sequelize) {
-  await sequelize.query('TRUNCATE products, game_categories, players, player_credit_profiles, audit_logs RESTART IDENTITY CASCADE');
-  await sequelize.query('INSERT INTO game_categories (name) VALUES ' + CATEGORIES.map((_, i) => `($${i + 1})`).join(', '), {
-    bind: CATEGORIES,
-  });
+  await sequelize.query(
+    'TRUNCATE products, game_categories, players, player_credit_profiles, audit_logs RESTART IDENTITY CASCADE'
+  );
+  await sequelize.query(
+    'INSERT INTO game_categories (name) VALUES ' + CATEGORIES.map((_, i) => `($${i + 1})`).join(', '),
+    {
+      bind: CATEGORIES,
+    }
+  );
 }
 
 function startServer() {
   const app = require('../../src/app');
   return new Promise((resolve) => {
-    const server = app.listen(0, () => resolve({ server, baseUrl: `http://127.0.0.1:${server.address().port}` }));
+    const server = app.listen(0, () =>
+      resolve({ server, baseUrl: `http://127.0.0.1:${server.address().port}` })
+    );
   });
 }
 

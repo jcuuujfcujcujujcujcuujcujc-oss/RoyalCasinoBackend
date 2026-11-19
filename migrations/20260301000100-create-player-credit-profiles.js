@@ -25,10 +25,9 @@ module.exports = {
       `);
 
       // Профили для уже существующих игроков
-      await run(
-        'INSERT INTO player_credit_profiles (player_id, balance) SELECT id, :starter FROM players',
-        { starter: STARTER_CREDITS }
-      );
+      await run('INSERT INTO player_credit_profiles (player_id, balance) SELECT id, :starter FROM players', {
+        starter: STARTER_CREDITS,
+      });
     });
   },
 

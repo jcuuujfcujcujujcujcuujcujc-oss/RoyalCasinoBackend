@@ -29,7 +29,15 @@ const send = (method, path, body, raw = false) =>
     body: body === undefined ? undefined : raw ? body : JSON.stringify(body),
   });
 
-const validGame = { name: 'Royal Fortune Slots', provider: 'Royal Games', volatility: 'HIGH', category: 'slot', minBet: 0.1, maxBet: 100, rtp: 96.5 };
+const validGame = {
+  name: 'Royal Fortune Slots',
+  provider: 'Royal Games',
+  volatility: 'HIGH',
+  category: 'slot',
+  minBet: 0.1,
+  maxBet: 100,
+  rtp: 96.5,
+};
 
 test('GET /api/health -> 200 и защитные заголовки', async () => {
   const res = await fetch(`${baseUrl}/api/health`);
@@ -118,8 +126,9 @@ test('GET /api/players требует Bearer-токен', async () => {
 
 test('GET каталога валидирует фильтр; POST требует Bearer-токен', async () => {
   assert.equal((await fetch(`${baseUrl}/api/products?categoryId=abc`)).status, 422);
-  const { category, ...rest } = validGame;
-  assert.equal((await send('POST', '/api/products', { ...rest, categoryId: 0 })).status, 401);
+  const gameWithoutCategory = { ...validGame };
+  delete gameWithoutCategory.category;
+  assert.equal((await send('POST', '/api/products', { ...gameWithoutCategory, categoryId: 0 })).status, 401);
 });
 
 test('body-parser: неподдерживаемая кодировка -> 415, а не 500', async () => {
@@ -150,7 +159,12 @@ test('алиасы: /api/categories и /api/game-categories', async () => {
 });
 
 test('POST /api/games требует роль даже с неверным телом', async () => {
-  const res = await send('POST', '/api/games', { ...validGame, volatility: 'EXTREME', rtp: 101, provider: '' });
+  const res = await send('POST', '/api/games', {
+    ...validGame,
+    volatility: 'EXTREME',
+    rtp: 101,
+    provider: '',
+  });
   assert.equal(res.status, 401);
 });
 

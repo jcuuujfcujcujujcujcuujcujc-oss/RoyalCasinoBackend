@@ -3,7 +3,7 @@
 const { sequelize } = require('../../models');
 const q = require('./statistics.queries');
 
-const rows = async (sql) => (await sequelize.query(sql, { type: sequelize.QueryTypes.SELECT }));
+const rows = async (sql) => await sequelize.query(sql, { type: sequelize.QueryTypes.SELECT });
 const one = async (sql) => (await rows(sql))[0];
 
 async function playersStatistics() {

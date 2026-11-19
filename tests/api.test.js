@@ -8,6 +8,7 @@ const assert = require('node:assert/strict');
 process.env.LOG_LEVEL = 'silent';
 const app = require('../src/app');
 const { sequelize } = require('../src/models');
+const openapi = require('../src/docs/openapi');
 
 let server;
 let baseUrl;
@@ -40,6 +41,15 @@ const validGame = {
   maxBet: 100,
   rtp: 96.5,
 };
+
+test('OpenAPI describes readiness, session logout, and credit ledger routes', () => {
+  assert.ok(openapi.paths['/api/health/ready']);
+  assert.ok(openapi.paths['/api/auth/logout-all']);
+  assert.ok(openapi.paths['/api/players/{id}/credits/transactions']);
+  assert.ok(openapi.paths['/api/players/{id}/credits/adjustments']);
+  const readiness503 = openapi.paths['/api/health/ready'].get.responses[503];
+  assert.equal(readiness503.content['application/json'].schema.properties.status.enum[0], 'not_ready');
+});
 
 test('GET /api/health -> 200 и защитные заголовки', async () => {
   const res = await fetch(`${baseUrl}/api/health`);

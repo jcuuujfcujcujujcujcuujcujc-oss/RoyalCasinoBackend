@@ -138,3 +138,42 @@
 - Удалены обе копии `mermaid.min.js`, дублирующие черновые диаграммы/render HTML, одноразовые локальные probe-файлы; оставлены исходники финальных диаграмм. `test-run-final.txt` пересохранён в UTF-8.
 - `npm ci` — PASS (294 пакета, 0 уязвимостей; среда Node 26.13.1). На Node 22.23.5 `npm test`: 118 тестов, 79 PASS, 39 PostgreSQL integration SKIP, 0 FAIL. `npm run test:coverage`: 66.15% строк, 85.71% ветвей, 49.45% функций. Lint, format и `npm audit --omit=dev --audit-level=high` прошли; npm audit сообщил 0 уязвимостей.
 - Docker CLI, PostgreSQL и gitleaks локально недоступны. Поэтому Docker build/compose, production-запуск, настоящая DB readiness, миграции/интеграции, gitleaks и удалённый GitHub Actions run ещё не проверены. Формат YAML/Docker Compose проверен Prettier, но это не заменяет запуск.
+
+## Этап 7 — документация и итоговая оценка
+
+- OpenAPI дополнен схемами запросов/ответов, ролями, ошибками и маршрутами readiness, logout-all, истории/корректировок ledger; схема тела 503 readiness соответствует реальному ответу. `docs/API.md` уточняет матрицу ролей, refresh reuse, health, request-id и правила ошибок.
+- Добавлен unit assertion, проверяющий наличие ключевых OpenAPI endpoints и контракт тела 503. Обратная совместимость сохраняется для прежних маршрутов; добавлены документированные endpoint-ы readiness, logout-all и работы с ledger. Изменения отражены в CHANGELOG.
+- Проверки после Stage 7: `npm run lint` PASS; `npm run format:check` PASS; `npm run test:unit` — 80/80 PASS; `npm test` — 119 тестов, 80 PASS, 39 PostgreSQL integration SKIP, 0 FAIL; `npm run test:coverage` — 69.18% строк, 85.71% ветвей, 49.45% функций; `npm audit --audit-level=high` — 0 уязвимостей; `git diff --check` PASS. Coverage goal 85% строк не достигнут.
+
+## Итоговая оценка по рубрике
+
+Оценка строже первоначальных локальных выводов: за непроверенные PostgreSQL/Docker/CI/production сценарии баллы не начисляются как за подтверждённые. Это оценка исходников и доступных проверок, не утверждение о production certification.
+
+| Категория            |       Балл | Основание                                                                                                                                                                                                                                 |
+| -------------------- | ---------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture         |      13/15 | Admin разложен по слоям, бизнес-операции вынесены в сервисы, middleware выделены; структура проверена, но эксплуатационная интеграция не запускалась.                                                                                     |
+| Code Quality         |       9/10 | ESLint/Prettier проходят, циклов не обнаружено на Stage 1, async error handling покрыт; отдельные DB-сервисы имеют низкое покрытие.                                                                                                       |
+| Database Engineering |       9/15 | Ledger, миграции, ограничения, транзакции и блокировки реализованы в коде; PostgreSQL миграции, конкурентные сценарии, restore и EXPLAIN не запускались.                                                                                  |
+| Security             |      16/20 | Реализованы auth hardening, RBAC/ownership, replay response, redaction, production docs toggle и audit; audit зависимости чистый. Историю сканировали на секреты на этапе аудита; локальный gitleaks и DB-backed сценарии не запускались. |
+| Testing              |      10/15 | 80 доступных тестов проходят; 39 PostgreSQL интеграций пропущены защитным guard при отсутствии `_test` БД; строки 69.18%, ветви 85.71%, ниже цели 85% строк.                                                                              |
+| Performance          |       4/10 | Выполнен локальный короткий замер health и исправлено ограничение health rate-limit; нет EXPLAIN, сравнительных замеров каталога/логина и пула PostgreSQL.                                                                                |
+| DevOps & Production  |       7/10 | Docker/Compose и CI workflows созданы, package audit и YAML формат проверены; Docker/Compose, CI remote run, production start и миграции в чистой БД не запускались.                                                                      |
+| Documentation        |        4/5 | README, API/OpenAPI и операции обновлены; OpenAPI ключевые маршруты проверяются, но полнота каждого response schema не подтверждена runtime contract-тестом.                                                                              |
+| **Итого**            | **72/100** | Цель 95/100 пока не подтверждена.                                                                                                                                                                                                         |
+
+### Приоритеты для достижения 95–100
+
+1. Запустить PostgreSQL 16 и выполнить clean migration, полный integration/security suite на отдельной БД с `_test`; исправить любые найденные сбои и поднять line coverage `src/` минимум до 85%, включая ветки auth/ledger.
+2. Собрать и поднять `docker compose up --build`; проверить `/api/health`, `/api/health/ready`, миграции и graceful shutdown на работающем сервисе.
+3. Получить успешный удалённый GitHub Actions run, проверить CodeQL/gitleaks результаты и тесты на чистой БД.
+4. Измерить `EXPLAIN ANALYZE` для ключевых запросов и нагрузку списка игр/логина до и после обоснованных оптимизаций.
+5. Выполнить реальную проверку backup/restore на тестовой БД, cleanup и совместимость сохранённых API-клиентов.
+
+### Ручные команды для недоступных в этой среде проверок
+
+```powershell
+docker compose up --build --wait
+docker compose exec api npm run db:migrate
+```
+
+В отдельной тестовой PostgreSQL создайте пустую БД с именем, оканчивающимся на `_test`, настройте `DB_NAME`/`TEST_DATABASE_URL` согласно локальному `.env`, затем выполните `npm run test:integration` и `npm run test:coverage`. Для резервирования и восстановления используйте `npm run db:backup`, далее только на disposable test database — `DB_RESTORE_CONFIRM=YES npm run db:restore`. Запустите PR workflow на GitHub и проверьте результаты CodeQL, gitleaks, migrations и integration suite.

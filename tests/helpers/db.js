@@ -12,6 +12,7 @@ const TABLES = [
   'game_categories',
   'players',
   'player_credit_profiles',
+  'credit_transactions',
   'users',
   'roles',
   'user_roles',
@@ -77,7 +78,7 @@ async function connect() {
 // чтобы список тестовых категорий не расходился с бизнес-валидацией.
 async function reset(sequelize) {
   await sequelize.query(
-    'TRUNCATE products, game_categories, players, player_credit_profiles, audit_logs RESTART IDENTITY CASCADE'
+    'TRUNCATE products, game_categories, players, player_credit_profiles, credit_transactions, audit_logs RESTART IDENTITY CASCADE'
   );
   await sequelize.query(
     'INSERT INTO game_categories (name) VALUES ' + CATEGORIES.map((_, i) => `($${i + 1})`).join(', '),
@@ -96,16 +97,19 @@ function startServer() {
   });
 }
 
-const client = (baseUrl, token) => async (method, path, body) => {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(baseUrl + path, {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const text = await res.text();
-  return { status: res.status, headers: res.headers, body: text ? JSON.parse(text) : null };
-};
+const client =
+  (baseUrl, token) =>
+  async (method, path, body, extraHeaders = {}) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    Object.assign(headers, extraHeaders);
+    const res = await fetch(baseUrl + path, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const text = await res.text();
+    return { status: res.status, headers: res.headers, body: text ? JSON.parse(text) : null };
+  };
 
 module.exports = { connect, reset, startServer, client };

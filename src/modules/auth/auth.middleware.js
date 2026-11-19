@@ -52,7 +52,7 @@ function ownerOrStaff(req, res, next) {
   next();
 }
 
-function ownerOrAdmin(req, res, next) {
+function ownerOrSelf(req, res, next) {
   if (req.auth.roles.includes('ADMIN')) return next();
   if (!req.auth.playerId || String(req.auth.playerId) !== String(req.params.id))
     return next(new AppError(404, 'Объект не найден', 'NOT_FOUND'));
@@ -66,4 +66,4 @@ function preventOwnStatusChange(req, res, next) {
   next();
 }
 
-module.exports = { authenticate, authorize, ownerOrStaff, ownerOrAdmin, preventOwnStatusChange };
+module.exports = { authenticate, authorize, ownerOrStaff, ownerOrSelf, preventOwnStatusChange };

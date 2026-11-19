@@ -3,7 +3,7 @@
 const { DataTypes } = require('sequelize');
 
 // Профиль виртуальных кредитов игрока. Кредиты не имеют денежной ценности.
-// Отрицательный баланс запрещён CHECK в БД. Через API баланс напрямую не изменяется.
+// Отрицательный баланс запрещён CHECK в БД; NUMERIC остаётся строкой, без потери точности.
 module.exports = (sequelize) => {
   const PlayerCreditProfile = sequelize.define(
     'PlayerCreditProfile',
@@ -15,10 +15,6 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: 0,
         validate: { min: 0 },
-        get() {
-          const value = this.getDataValue('balance');
-          return value === null || value === undefined ? value : Number(value);
-        },
       },
     },
     { tableName: 'player_credit_profiles', underscored: true, timestamps: true }

@@ -13,3 +13,5 @@ tmp-api-demo.js
 tmp-dbg.js
 tmp-probe.js
 docs/laboratory-report/final/Отчет_лабораторная_RoyalCasinoBackend.docx
+.backups/
+backups/*.dump

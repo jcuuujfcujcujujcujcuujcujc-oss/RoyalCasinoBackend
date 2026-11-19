@@ -111,6 +111,16 @@ module.exports = {
         responses: { 204: { description: 'Сеанс закрыт' }, 401: { description: 'Требуется вход' } },
       },
     },
+    '/api/auth/logout-all': {
+      post: {
+        summary: 'Отозвать все refresh-сессии текущего пользователя',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          204: { description: 'Все refresh-сессии отозваны' },
+          401: { description: 'Требуется вход' },
+        },
+      },
+    },
     '/api/auth/me': {
       get: {
         summary: 'Текущий пользователь',
@@ -226,6 +236,59 @@ module.exports = {
         responses: {
           200: { description: 'Только виртуальный баланс' },
           404: { description: 'Не найден или не принадлежит пользователю' },
+        },
+      },
+    },
+    '/api/players/{id}/credits/transactions': {
+      get: {
+        summary: 'История виртуальных кредитов (владелец, MANAGER, ADMIN)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { in: 'path', name: 'id', required: true, schema: { type: 'integer' } },
+          { $ref: '#/components/parameters/page' },
+          { $ref: '#/components/parameters/limit' },
+        ],
+        responses: {
+          200: { description: 'История проводок' },
+          401: { description: 'Требуется вход' },
+          403: { description: 'Недостаточно прав' },
+          404: { description: 'Игрок не найден' },
+        },
+      },
+    },
+    '/api/players/{id}/credits/adjustments': {
+      post: {
+        summary: 'Корректировать только виртуальные кредиты (ADMIN)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { in: 'path', name: 'id', required: true, schema: { type: 'integer' } },
+          {
+            in: 'header',
+            name: 'Idempotency-Key',
+            required: true,
+            schema: { type: 'string', minLength: 8, maxLength: 128 },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['amount'],
+                properties: {
+                  amount: { type: 'string', pattern: '^-?(0|[1-9][0-9]{0,11})(\\.[0-9]{1,2})?$' },
+                },
+                additionalProperties: false,
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Проводка создана или возвращена идемпотентно' },
+          403: { description: 'Только ADMIN' },
+          409: { description: 'Idempotency-Key использован с другой суммой' },
+          422: { description: 'Недостаточно виртуальных кредитов или некорректная сумма' },
         },
       },
     },

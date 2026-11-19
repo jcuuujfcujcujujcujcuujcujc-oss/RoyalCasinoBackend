@@ -7,7 +7,9 @@ const toBool = (value, fallback = false) =>
 
 const toTrustProxy = (value) => {
   if (value === undefined || ['false', '0', 'off', ''].includes(String(value).toLowerCase())) return false;
-  if (['true', 'on'].includes(String(value).toLowerCase())) return true;
+  if (['true', 'on'].includes(String(value).toLowerCase())) {
+    throw new Error('TRUST_PROXY должен задавать число переходов или доверенные адреса, не true');
+  }
   if (/^\d+$/.test(String(value))) return Number(value);
   return String(value);
 };
@@ -50,6 +52,7 @@ const env = {
   corsOrigin: process.env.CORS_ORIGIN || '',
   trustProxy: toTrustProxy(process.env.TRUST_PROXY),
   enableDocs: toBool(process.env.ENABLE_DOCS, process.env.NODE_ENV !== 'production'),
+  auditRetentionDays: toBoundedInt(process.env.AUDIT_RETENTION_DAYS, 365, 30, 3650, 'AUDIT_RETENTION_DAYS'),
 };
 
 env.isProduction = env.nodeEnv === 'production';

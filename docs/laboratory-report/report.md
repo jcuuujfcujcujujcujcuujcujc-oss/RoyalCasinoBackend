@@ -107,3 +107,11 @@
 - Заглушка bcrypt создаётся при старте с настроенным `BCRYPT_ROUNDS`. MANAGER получил чтение любого профиля игрока/кредитного профиля; не-ADMIN не может менять email через Player PATCH.
 - Изменены интеграционные сценарии повторного использования, logout-all и запрета изменения email. `npm run lint`, `npm run test:unit` (68 PASS), `npm test` (68 PASS, 37 SKIP из-за отсутствия PostgreSQL), `npm run format:check` и `git diff --check` прошли.
 - Миграция refresh-семейств, PostgreSQL integration, brute-force с реальным store и поведение через доверенный reverse proxy не проверены: PostgreSQL и прокси в среде отсутствуют.
+
+## Этап 3 — PostgreSQL и виртуальные кредиты
+
+- Добавлена миграция `credit_transactions`: проводки GRANT/ADJUSTMENT, точные NUMERIC(14,2), уникальность `(player_id, idempotency_key)`, индекс истории и триггер запрета UPDATE/DELETE. Миграция отражает существующий баланс стартовой GRANT-проводкой.
+- Начисление стартового баланса новых профилей также создаёт проводку в транзакции. ADMIN endpoint корректировки применяет signed decimal string с BigInt-сантимами, блокировкой профиля `FOR UPDATE`, проверкой нулевого минимума и аудитом. Владелец/MANAGER/ADMIN могут читать историю.
+- Добавлены тесты валидации точности/идемпотентности/пагинации и интеграционный сценарий идемпотентных и конкурентных корректировок, инварианта `balance = SUM(ledger)` и неизменяемости. Интеграционный сценарий не запускался без PostgreSQL.
+- Добавлены `db:backup`, явно подтверждаемый `db:restore`, `maintenance:cleanup` с политикой хранения аудита и `docs/OPERATIONS.md`. Реальный backup, restore и cleanup не проверены: PostgreSQL client tools и сервер недоступны.
+- Результат проверок: `npm run test:unit` — 71 PASS; `npm test` — 71 PASS, 38 integration SKIP (нет PostgreSQL); `npm run lint`, `npm run format:check`, `npm audit` (0 vulnerabilities), `git diff --check` — PASS.

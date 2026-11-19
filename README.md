@@ -76,6 +76,8 @@ npm run db:migrate:undo       # откатить последнюю
 | `20260301000000-casino-game-fields`            | `provider`, `volatility`, типы `dice`/`lottery`, RTP 0..100, категории dice/lottery                      |
 | `20260301000100-create-player-credit-profiles` | `player_credit_profiles`, FK `ON DELETE CASCADE`, CHECK `balance >= 0`, стартовые профили                |
 | `20260401000000-add-auth-audit`                | `users`, `roles`, `user_roles`, hashed `refresh_tokens`, `audit_logs`, nullable unique `players.user_id` |
+| `20261119000000-refresh-token-families`        | refresh-token families, replacement links for replay detection                                           |
+| `20261119000100-create-credit-ledger`          | immutable virtual credit ledger and opening balance entries                                              |
 
 Схема меняется только миграциями; `sequelize.sync()` не используется.
 
@@ -83,6 +85,7 @@ npm run db:migrate:undo       # откатить последнюю
 
 ```bash
 npm run test:unit             # валидация, errorHandler, HTTP-проверки без БД
+npm run test:coverage         # V8 line/branch/function coverage, включая PostgreSQL интеграции
 # Интеграционные тесты (HTTP + PostgreSQL). БД ОБЯЗАТЕЛЬНО отдельная, имя оканчивается на _test:
 #   DB_NAME=universal_backend_test, затем:
 NODE_ENV=test npm run db:migrate
@@ -100,10 +103,25 @@ npm run format                  # применить форматировани�
 
 ESLint и Prettier — только инструменты разработки; `@eslint/js` и `globals` подключают рекомендуемые правила и Node.js globals для flat config. `pg` и `pg-hstore` нужны Sequelize PostgreSQL dialect и загружаются динамически, поэтому статический depcheck может ошибочно пометить их неиспользуемыми.
 
+`pino` и `pino-http` обеспечивают JSON-логи, request-id и редактирование чувствительных заголовков/полей.
+
+## Docker и production
+
+```sh
+cp .env.example .env
+# В .env обязательно задайте DB_PASSWORD и случайный JWT_SECRET (48 random bytes).
+docker compose up --build
+```
+
+Compose поднимает PostgreSQL 16, ждёт readiness БД, выполняет миграции и только затем запускает API. Проверьте `GET /api/health` и `GET /api/health/ready`. Приложение работает непривилегированным пользователем; Docker healthcheck проверяет readiness. В production Swagger выключен (`ENABLE_DOCS=false`), а `DB_LOGGING` запрещён. Параметр `TRUST_PROXY` задаётся числом hop или списком доверенных прокси-сетей.
+
+CI запускает npm ci, lint, format, миграции и весь набор тестов на PostgreSQL 16; security jobs выполняют gitleaks и CodeQL. Dependabot обновляет npm и GitHub Actions. Локальные резервные копии и восстановление описаны в [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
 ## Эндпоинты (подробно с примерами: `docs/API.md`)
 
 ```
-GET    /api/health
+GET    /api/health                 (лёгкая проверка процесса)
+GET    /api/health/ready           (БД доступна: 200, иначе 503)
 
 GET                   /api/games            ?page&limit&sortBy&order&search&category&categoryId&provider&volatility&isActive (public)
 POST|PUT|PATCH        /api/games[/:id]      (ADMIN, MANAGER)
@@ -114,13 +132,16 @@ POST|PUT|PATCH        /api/categories[/:id] (ADMIN, MANAGER)
 DELETE                /api/categories/:id   (ADMIN; 409, если в категории есть игры)
 
 POST                  /api/auth/register     (создаёт PLAYER + профиль и 1000 кредитов в транзакции)
-POST                  /api/auth/login        (5 попыток за 15 минут на IP)
+POST                  /api/auth/login        (лимит неудач на IP и нормализованный email)
 POST                  /api/auth/refresh      (ротация refresh token)
 POST                  /api/auth/logout       (Bearer + отзыв refresh token)
+POST                  /api/auth/logout-all   (Bearer + отзыв всех refresh-сессий)
 GET                   /api/auth/me           (Bearer)
 GET|POST              /api/players           (ADMIN, MANAGER)
-GET|PATCH             /api/players/:id       (только свой профиль или ADMIN)
-GET                   /api/players/:id/credits (только свой профиль или ADMIN)
+GET|PATCH             /api/players/:id       (GET: владелец/MANAGER/ADMIN; PATCH: владелец/ADMIN)
+GET                   /api/players/:id/credits (владелец/MANAGER/ADMIN)
+GET                   /api/players/:id/credits/transactions (владелец/MANAGER/ADMIN)
+POST                  /api/players/:id/credits/adjustments (ADMIN, Idempotency-Key)
 PUT|DELETE            /api/players/:id       (ADMIN)
 
 GET  /api/casino/statistics[/*]             (ADMIN, MANAGER)
@@ -163,6 +184,10 @@ GET  /api/openapi.json                      (OpenAPI 3.0)
 Кредиты являются учебными виртуальными единицами и не имеют денежной ценности. Не реализованы платежи, депозиты, вывод средств, кошельки или платёжные провайдеры. Администратор может проводить виртуальную корректировку; все операции пишутся в неизменяемый ledger.
 Для реального игрового сервиса потребуются сертифицированный ГСЧ, KYC/AML, лимиты ответственной игры и лицензирование.
 
+## Модель угроз и ограничения защиты
+
+Защищаются пароли (bcrypt), bearer/refresh-сессии, административные роли, доступ к профилям, виртуальный баланс и аудит. Refresh-секреты в БД хранятся как хеши, семейства отзываются при replay, админские корректировки атомарны и идемпотентны. Приложение не обещает защиту от распределённого отказа в обслуживании: лимиты хранятся в памяти одного процесса. Нет MFA, подтверждения email и восстановления пароля. Доверие к reverse proxy задаётся оператором. Для production отдельно настройте TLS, сетевые ACL, бэкапы, ограниченную DB-роль и шифрование хранилища. Реальные деньги, платёжные потоки, игровой движок и случайность вне рамок.
+
 ## Аутентификация и первичный администратор
 
 Скопируйте `.env.example` в `.env`, задайте PostgreSQL-параметры и замените пример `JWT_SECRET` случайным секретом длиной не менее 32 байт. Его можно получить командой `node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"`. Не публикуйте этот секрет.
@@ -178,10 +203,11 @@ Remove-Item Env:ADMIN_EMAIL, Env:ADMIN_PASSWORD
 
 Bootstrap не содержит встроенного пароля; пароль должен занимать 12–72 байта UTF-8. Публичная регистрация назначает только `PLAYER`. Роли `ADMIN`, `MANAGER`, `PLAYER` создаёт миграция; операции назначения ролей и блокировки доступны только ADMIN. Access Token действует 15 минут, refresh token — 7 дней по умолчанию; значения настраиваются в окружении. Refresh токены в БД хранятся только как SHA-256 хеши и ротируются при обновлении.
 
-Публичны только чтение каталога игр/категорий, health и auth-регистрация/вход/обновление. Игрок получает только собственный профиль и кредитный профиль. Изменения игр и категорий требуют `ADMIN` или `MANAGER`, удаление — `ADMIN`. `/api/docs` содержит спецификацию OpenAPI и кнопку Bearer Authorize.
+Публичны только чтение каталога игр/категорий, health и auth-регистрация/вход/обновление. Игрок читает только собственные профиль, баланс и историю. `MANAGER`/`ADMIN` могут читать любой профиль и кредитную историю; `MANAGER` может создавать игроков, но менять статусы, назначать роли и корректировать кредиты может только `ADMIN`. Изменения игр и категорий требуют `ADMIN` или `MANAGER`, удаление — `ADMIN`. `/api/docs` содержит спецификацию OpenAPI и кнопку Bearer Authorize, если `ENABLE_DOCS=true`.
 
 За reverse proxy задайте `TRUST_PROXY` как число доверенных переходов или список доверенных адресов; по умолчанию proxy-заголовки не используются. Лимит login считает только неуспешные запросы по IP и нормализованному email. `ENABLE_DOCS` включает Swagger/OpenAPI; в production документация выключена по умолчанию. Refresh-token replay отзывает всё семейство, а `/api/auth/logout-all` отзывает все активные refresh-сессии пользователя. Игрок не может менять email через Player PATCH; это доступно только администратору.
 
 Списки каталога принимают `search` (1–100 символов), фильтры, сортировку и пагинацию (`limit` максимум 100, смещение максимум 1 000 000). Символы `%` и `_` в поиске считаются обычными символами. Админский журнал поддерживает `userId`, `action`, `entityType`, `from`, `to`, `page`, `limit`.
 
 Полный отчёт по внедрению лабораторной № 3: `docs/laboratory-report/report.md`.
+Правила внесения изменений: [CONTRIBUTING.md](CONTRIBUTING.md); история API/функций: [CHANGELOG.md](CHANGELOG.md).

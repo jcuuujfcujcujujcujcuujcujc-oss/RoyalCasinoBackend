@@ -53,9 +53,15 @@ const env = {
   trustProxy: toTrustProxy(process.env.TRUST_PROXY),
   enableDocs: toBool(process.env.ENABLE_DOCS, process.env.NODE_ENV !== 'production'),
   auditRetentionDays: toBoundedInt(process.env.AUDIT_RETENTION_DAYS, 365, 30, 3650, 'AUDIT_RETENTION_DAYS'),
+  logLevel: process.env.LOG_LEVEL || 'info',
 };
 
 env.isProduction = env.nodeEnv === 'production';
+
+if (!['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(env.logLevel)) {
+  throw new Error('LOG_LEVEL должен быть одним из fatal/error/warn/info/debug/trace/silent');
+}
+if (env.isProduction && env.db.logging) throw new Error('DB_LOGGING нельзя включать в production');
 
 if (env.isProduction) {
   const missing = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'JWT_SECRET'].filter(

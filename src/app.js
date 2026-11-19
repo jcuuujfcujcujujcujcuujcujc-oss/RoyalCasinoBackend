@@ -11,6 +11,7 @@ const docsCsp = require('./middleware/docsCsp');
 const swaggerUi = require('swagger-ui-express');
 const openapi = require('./docs/openapi');
 const env = require('./config/env');
+const { requestLogger } = require('./utils/logger');
 
 const app = express();
 
@@ -18,6 +19,7 @@ if (env.trustProxy !== false) app.set('trust proxy', env.trustProxy);
 
 app.disable('x-powered-by');
 app.use(securityHeaders);
+app.use(requestLogger());
 app.use(cors);
 app.use(express.json({ limit: '100kb' }));
 app.use('/api/auth/login', rateLimits.login);

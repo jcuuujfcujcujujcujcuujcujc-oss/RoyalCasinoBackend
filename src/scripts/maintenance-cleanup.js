@@ -3,6 +3,7 @@
 const { sequelize } = require('../models');
 const { QueryTypes } = require('sequelize');
 const env = require('../config/env');
+const { logger } = require('../utils/logger');
 
 async function main() {
   try {
@@ -15,13 +16,13 @@ async function main() {
         `DELETE FROM audit_logs WHERE created_at < CURRENT_TIMESTAMP - (:days * INTERVAL '1 day') RETURNING id`,
         { replacements: { days: env.auditRetentionDays }, transaction, type: QueryTypes.SELECT }
       );
-      console.log(
-        JSON.stringify({
-          event: 'maintenance_cleanup_complete',
+      logger.info(
+        {
           refreshTokensDeleted: refresh.length,
           auditLogsDeleted: audit.length,
           auditRetentionDays: env.auditRetentionDays,
-        })
+        },
+        'maintenance cleanup complete'
       );
     });
   } finally {
@@ -30,6 +31,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(JSON.stringify({ event: 'maintenance_cleanup_failed', message: error.message }));
+  logger.error({ errorName: error.name, errorCode: error.code }, 'maintenance cleanup failed');
   process.exitCode = 1;
 });

@@ -3,6 +3,7 @@
 // Требует установленных зависимостей (sequelize), БД не нужна.
 const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
+process.env.LOG_LEVEL = 'silent';
 const express = require('express');
 const { UniqueConstraintError, ForeignKeyConstraintError, DatabaseError } = require('sequelize');
 const errorHandler = require('../src/middleware/errorHandler');

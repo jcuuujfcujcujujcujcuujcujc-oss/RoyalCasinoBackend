@@ -7,6 +7,7 @@ const playerRoutes = require('../modules/players/player.routes');
 const statisticsRoutes = require('../modules/statistics/statistics.routes');
 const authRoutes = require('../modules/auth/auth.routes');
 const adminRoutes = require('../modules/admin/admin.routes');
+const { sequelize } = require('../models');
 
 const router = Router();
 
@@ -18,6 +19,15 @@ router.get('/health', (req, res) => {
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
   });
+});
+
+router.get('/health/ready', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.status(200).json({ status: 'ready', dependencies: { database: 'ok' } });
+  } catch {
+    res.status(503).json({ status: 'not_ready', dependencies: { database: 'unavailable' } });
+  }
 });
 
 router.use('/auth', authRoutes);

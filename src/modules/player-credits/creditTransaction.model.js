@@ -13,7 +13,7 @@ module.exports = (sequelize) => {
       balanceAfter: { type: DataTypes.DECIMAL(14, 2), allowNull: false, field: 'balance_after' },
       idempotencyKey: { type: DataTypes.STRING(128), allowNull: false, field: 'idempotency_key' },
       createdBy: { type: DataTypes.INTEGER, allowNull: true, field: 'created_by' },
-      createdAt: { type: DataTypes.DATE, allowNull: false, field: 'created_at' },
+      createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, field: 'created_at' },
     },
     {
       tableName: 'credit_transactions',

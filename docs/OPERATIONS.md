@@ -2,6 +2,14 @@
 
 Royal Casino хранит только учебные виртуальные кредиты. Здесь нет денежных средств, депозитов, выплат или платёжных провайдеров.
 
+## Запуск и проверки готовности
+
+Создайте `.env` из `.env.example`, замените `DB_PASSWORD` и задайте случайный `JWT_SECRET` минимум 32 байта. Затем `docker compose up --build`; compose ждёт здоровую PostgreSQL 16, применяет миграции отдельным сервисом и запускает API только после успешного завершения миграций.
+
+`GET /api/health` проверяет только процесс. `GET /api/health/ready` проверяет PostgreSQL и возвращает 503, если БД недоступна. Чтобы вручную проверить graceful shutdown, выполните `docker compose stop api`, затем `docker compose logs api` и убедитесь, что есть `graceful shutdown complete`; Kubernetes/Compose должен дать контейнеру не менее 15 секунд на завершение.
+
+Для production используйте отдельного пользователя PostgreSQL с минимально необходимыми правами, TLS перед публичным ingress, сетевые ACL и шифрованное хранилище backup. `LOG_LEVEL` настраивается; заголовки Authorization, cookie, password, refresh token и API key редактируются в JSON-логах.
+
 ## Резервные копии
 
 Установите PostgreSQL client tools (`pg_dump`, `pg_restore`), задайте DB_* переменные в `.env` или окружении, затем выполните:

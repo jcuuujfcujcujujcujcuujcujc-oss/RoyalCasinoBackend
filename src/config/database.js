@@ -2,6 +2,7 @@
 
 const { Sequelize } = require('sequelize');
 const env = require('./env');
+const { logger } = require('../utils/logger');
 
 // Формат совместим и с Sequelize, и с sequelize-cli
 const dbConfig = {
@@ -20,7 +21,10 @@ const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.p
 
 async function connectDatabase() {
   await sequelize.authenticate(); // только проверка соединения, схему НЕ трогаем
-  console.log(`База данных доступна: ${env.db.host}:${env.db.port}/${env.db.name}`);
+  logger.info(
+    { host: env.db.host, port: env.db.port, database: env.db.name },
+    'database connection established'
+  );
 }
 
 module.exports = { sequelize, dbConfig, connectDatabase };

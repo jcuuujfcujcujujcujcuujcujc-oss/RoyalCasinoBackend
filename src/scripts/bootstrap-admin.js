@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const env = require('../config/env');
 const { sequelize, User, Role, UserRole } = require('../models');
 const { record } = require('../modules/audit/audit.service');
+const { logger } = require('../utils/logger');
 
 async function main() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
@@ -34,12 +35,12 @@ async function main() {
       { userId: user.id, action: 'BOOTSTRAP_ADMIN', entityType: 'User', entityId: user.id, details: {} },
       transaction
     );
-    console.log(`Администратор настроен: ${email} (id=${user.id}). Пароль не выводится.`);
+    logger.info({ userId: user.id }, 'administrator bootstrapped');
   });
 }
 main()
   .catch((error) => {
-    console.error(error.message);
+    logger.error({ errorName: error.name, errorCode: error.code }, 'administrator bootstrap failed');
     process.exitCode = 1;
   })
   .finally(() => sequelize.close());

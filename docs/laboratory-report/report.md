@@ -125,7 +125,16 @@
 
 ## Этап 5 — производительность
 
-- Первый `autocannon` прогон `/api/health` (10 соединений, 10 с) выявил, что общий API rate limit ограничивал probe: 300 ответов 2xx и 114 960 ответов не-2xx. По результату health и будущий readiness исключены из общего пользовательского лимита; добавлена HTTP-проверка 301 последовательного health запроса.
-- После изменения: локальный `autocannon` `/api/health`, 10 соединений, 5.01 с — 77 046 ответов 2xx, 0 не-2xx, 0 ошибок, примерно 15 378 req/s по числу ответов; следующий короткий прогон — 13 076 req/s, p50 0 ms, p97.5 1 ms, p99 1 ms, max 8 ms. Разница показывает шум короткого локального замера; результаты не являются производственной ёмкостью.
+- Первый `autocannon` прогон `/api/health` (Node 26.13.1, 10 соединений, 10 с) выявил, что общий API rate limit ограничивал probe: 300 ответов 2xx и 114 960 ответов не-2xx. Health/readiness исключены из общего пользовательского лимита; добавлена проверка 301 последовательного health запроса.
+- После исключения лимита и до включения Pino: 77 046 ответов 2xx за 5.01 с (около 15 378 req/s), 0 не-2xx, p50 0 ms, p97.5 1 ms, p99 1 ms, max 8 ms. Финальный прогон после request-id/logging middleware: Node 26.13.1, 10 соединений, 5.02 с — 32 718 ответов 2xx, 0 ошибок/не-2xx, 6 517 req/s, p50 1 ms, p97.5 3 ms, p99 5 ms, max 27 ms. Короткие локальные прогоны шумные; это не производственная ёмкость.
 - База измерений для прежнего commit, PostgreSQL `EXPLAIN ANALYZE`, список игр и login не получены: PostgreSQL отсутствует, а нагрузочный замер до устранения лимита был насыщен 429-ответами. Пул и запросы не оптимизировались без данных.
 - После изменения `npm test`: 115 тестов, 76 PASS, 39 PostgreSQL integration SKIP, 0 FAIL; `npm run test:coverage`: 70.31% строк, 87.08% ветвей. Lint/format прошли.
+
+## Этап 6 — инфраструктура и production readiness
+
+- Добавлены multi-stage `Dockerfile` (Node 22 Alpine, runtime без dev dependencies, non-root, readiness HEALTHCHECK), `docker-compose.yml` (PostgreSQL 16, healthcheck, миграции как обязательный успешный шаг до API), `.dockerignore`.
+- Добавлены `/api/health/ready` (200/503 по состоянию БД), graceful shutdown с пределом ожидания и документированной ручной проверкой, JSON request logging через Pino с UUID request-id и redact для Authorization/cookie/API key/password/refresh token; production запрещает SQL debug logging. Лог-redaction тест прошёл.
+- Добавлены CI workflow: Node 22, PostgreSQL 16, npm ci, lint/format, миграции, интеграционные тесты с coverage, production npm audit, gitleaks v3 и CodeQL v4. Добавлен Dependabot для npm и actions.
+- Удалены обе копии `mermaid.min.js`, дублирующие черновые диаграммы/render HTML, одноразовые локальные probe-файлы; оставлены исходники финальных диаграмм. `test-run-final.txt` пересохранён в UTF-8.
+- `npm ci` — PASS (294 пакета, 0 уязвимостей; среда Node 26.13.1). На Node 22.23.5 `npm test`: 118 тестов, 79 PASS, 39 PostgreSQL integration SKIP, 0 FAIL. `npm run test:coverage`: 66.15% строк, 85.71% ветвей, 49.45% функций. Lint, format и `npm audit --omit=dev --audit-level=high` прошли; npm audit сообщил 0 уязвимостей.
+- Docker CLI, PostgreSQL и gitleaks локально недоступны. Поэтому Docker build/compose, production-запуск, настоящая DB readiness, миграции/интеграции, gitleaks и удалённый GitHub Actions run ещё не проверены. Формат YAML/Docker Compose проверен Prettier, но это не заменяет запуск.

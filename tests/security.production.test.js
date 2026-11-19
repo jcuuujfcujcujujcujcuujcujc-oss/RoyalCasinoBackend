@@ -16,6 +16,7 @@ function docsStatus(enableDocs) {
     DB_USER: 'test-user',
     DB_PASSWORD: 'safe-test-password',
     JWT_SECRET: crypto.randomBytes(48).toString('base64url'),
+    LOG_LEVEL: 'silent',
   });
   if (enableDocs !== undefined) env.ENABLE_DOCS = enableDocs;
   const script = `const app=require('./src/app');const s=app.listen(0,async()=>{const base='http://127.0.0.1:'+s.address().port;const a=await fetch(base+'/api/docs');const b=await fetch(base+'/api/openapi.json');console.log(a.status+','+b.status);s.close()})`;

@@ -6,6 +6,7 @@
 
 const { CATEGORIES } = require('../../src/modules/products/product.validation');
 const crypto = require('node:crypto');
+process.env.LOG_LEVEL = 'silent';
 
 const TABLES = [
   'products',

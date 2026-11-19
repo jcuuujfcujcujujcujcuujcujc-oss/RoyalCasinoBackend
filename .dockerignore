@@ -1,0 +1,13 @@
+.git
+.github
+node_modules
+coverage
+.env
+.env.*
+!.env.example
+.backups
+backups
+docs/laboratory-report/evidence
+docs/laboratory-report/final
+tmp-*.js
+*.log

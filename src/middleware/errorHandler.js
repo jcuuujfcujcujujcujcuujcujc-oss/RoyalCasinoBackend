@@ -9,6 +9,7 @@ const {
 } = require('sequelize');
 const env = require('../config/env');
 const { AppError } = require('../errors/AppError');
+const { logger } = require('../utils/logger');
 
 // Какое поле нарушило уникальность: берём из err.fields или из имени ограничения (players_nickname_..., ...)
 const UNIQUE_FIELDS = ['nickname', 'email', 'name'];
@@ -71,7 +72,10 @@ function normalize(err) {
 module.exports = (err, req, res, next) => {
   const { status, code, message, details } = normalize(err);
 
-  if (status >= 500) console.error(err);
+  if (status >= 500) {
+    const log = req.log || logger;
+    log.error({ requestId: req.id, errorName: err.name, errorCode: err.code, status }, 'request failed');
+  }
 
   const body = { error: { code, message } };
   if (details) body.error.details = details;

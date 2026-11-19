@@ -28,10 +28,10 @@
     "admin:bootstrap": "node src/scripts/bootstrap-admin.js",
     "test:unit": "node --test tests/*.test.js",
     "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js",
-    "test:coverage": "c8 --all --include=src --reporter=text --reporter=lcov node --test tests/*.test.js",
+    "test:coverage": "c8 --all --include=src --reporter=text --reporter=lcov node --test --test-concurrency=1 \"tests/**/*.test.js\"",
     "lint": "eslint src migrations tests eslint.config.js",
-    "format": "prettier --write \"src/**/*.js\" \"migrations/**/*.js\" \"tests/**/*.js\" eslint.config.js .prettierrc.json package.json README.md docs/API.md docs/laboratory-report/report.md",
-    "format:check": "prettier --check \"src/**/*.js\" \"migrations/**/*.js\" \"tests/**/*.js\" eslint.config.js .prettierrc.json package.json README.md docs/API.md docs/laboratory-report/report.md"
+    "format": "prettier --write \"src/**/*.js\" \"migrations/**/*.js\" \"tests/**/*.js\" \".github/**/*.yml\" eslint.config.js .prettierrc.json package.json README.md docs/API.md docs/OPERATIONS.md docs/laboratory-report/report.md CHANGELOG.md CONTRIBUTING.md docker-compose.yml",
+    "format:check": "prettier --check \"src/**/*.js\" \"migrations/**/*.js\" \"tests/**/*.js\" \".github/**/*.yml\" eslint.config.js .prettierrc.json package.json README.md docs/API.md docs/OPERATIONS.md docs/laboratory-report/report.md CHANGELOG.md CONTRIBUTING.md docker-compose.yml"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -43,6 +43,8 @@
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0",
     "sequelize": "^6.37.7",
     "swagger-ui-express": "^5.0.1"
   },

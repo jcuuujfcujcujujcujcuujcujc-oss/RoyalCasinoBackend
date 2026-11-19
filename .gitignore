@@ -6,12 +6,11 @@ npm-debug.log*
 logs/
 *.log
 coverage/
+.nyc_output/
+.coverage
 .DS_Store
 .idea/
 .vscode/
-tmp-api-demo.js
-tmp-dbg.js
-tmp-probe.js
 docs/laboratory-report/final/Отчет_лабораторная_RoyalCasinoBackend.docx
 .backups/
 backups/*.dump

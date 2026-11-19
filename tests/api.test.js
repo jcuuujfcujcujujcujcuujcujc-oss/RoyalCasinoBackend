@@ -5,7 +5,9 @@
 
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+process.env.LOG_LEVEL = 'silent';
 const app = require('../src/app');
+const { sequelize } = require('../src/models');
 
 let server;
 let baseUrl;
@@ -44,9 +46,28 @@ test('GET /api/health -> 200 и защитные заголовки', async () =
   assert.equal(res.status, 200);
   assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(res.headers.get('x-powered-by'), null);
+  assert.match(res.headers.get('x-request-id'), /^[0-9a-f-]{36}$/);
   const health = await res.json();
   assert.equal(health.status, 'ok');
   assert.equal(health.service, 'royal-casino-backend');
+});
+
+test('GET /api/health/ready reports database readiness without leaking errors', async (t) => {
+  t.mock.method(sequelize, 'authenticate', async () => undefined);
+  const ready = await fetch(`${baseUrl}/api/health/ready`);
+  assert.equal(ready.status, 200);
+  assert.equal((await ready.json()).status, 'ready');
+});
+
+test('GET /api/health/ready returns 503 and hides database details on failure', async (t) => {
+  t.mock.method(sequelize, 'authenticate', async () => {
+    throw new Error('password=secret');
+  });
+  const ready = await fetch(`${baseUrl}/api/health/ready`);
+  assert.equal(ready.status, 503);
+  const payload = await ready.json();
+  assert.equal(payload.status, 'not_ready');
+  assert.equal(JSON.stringify(payload).includes('secret'), false);
 });
 
 test('health probe не расходует API rate limit', async () => {

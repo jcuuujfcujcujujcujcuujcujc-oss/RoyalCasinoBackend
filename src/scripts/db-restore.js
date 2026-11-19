@@ -17,6 +17,7 @@ if (process.env.DB_RESTORE_CONFIRM !== 'YES') {
 const child = spawn(
   'pg_restore',
   [
+    '--exit-on-error',
     '--clean',
     '--if-exists',
     '--no-owner',

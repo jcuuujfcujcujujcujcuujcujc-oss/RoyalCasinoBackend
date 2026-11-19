@@ -49,6 +49,13 @@ test('GET /api/health -> 200 и защитные заголовки', async () =
   assert.equal(health.service, 'royal-casino-backend');
 });
 
+test('health probe не расходует API rate limit', async () => {
+  for (let i = 0; i < 301; i += 1) {
+    const response = await fetch(`${baseUrl}/api/health`);
+    assert.equal(response.status, 200);
+  }
+});
+
 test('неизвестный маршрут -> 404', async () => {
   const res = await fetch(`${baseUrl}/api/nope`);
   assert.equal(res.status, 404);

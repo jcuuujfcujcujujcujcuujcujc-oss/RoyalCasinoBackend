@@ -23,7 +23,10 @@ app.use(express.json({ limit: '100kb' }));
 app.use('/api/auth/login', rateLimits.login);
 app.use('/api/auth/login', rateLimits.loginAccount);
 app.use('/api/auth/register', rateLimits.register);
-app.use('/api', rateLimits.api);
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health' || req.path === '/health/ready') return next();
+  return rateLimits.api(req, res, next);
+});
 
 if (env.enableDocs) {
   app.get('/api/openapi.json', (req, res) => res.json(openapi));

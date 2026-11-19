@@ -176,4 +176,4 @@ docker compose up --build --wait
 docker compose exec api npm run db:migrate
 ```
 
-В отдельной тестовой PostgreSQL создайте пустую БД с именем, оканчивающимся на `_test`, настройте `DB_NAME`/`TEST_DATABASE_URL` согласно локальному `.env`, затем выполните `npm run test:integration` и `npm run test:coverage`. Для резервирования и восстановления используйте `npm run db:backup`, далее только на disposable test database — `DB_RESTORE_CONFIRM=YES npm run db:restore`. Запустите PR workflow на GitHub и проверьте результаты CodeQL, gitleaks, migrations и integration suite.
+В отдельной тестовой PostgreSQL создайте пустую БД с именем, оканчивающимся на `_test`, настройте `DB_NAME`/`TEST_DATABASE_URL` согласно локальному `.env`, затем выполните `npm run test:integration` и `npm run test:coverage`. Для резервирования и восстановления используйте `npm run db:backup`, далее только на disposable test database — PowerShell: `$env:DB_RESTORE_CONFIRM = "YES"; npm run db:restore`. Запустите PR workflow на GitHub и проверьте результаты CodeQL, gitleaks, migrations и integration suite.

@@ -115,3 +115,10 @@
 - Добавлены тесты валидации точности/идемпотентности/пагинации и интеграционный сценарий идемпотентных и конкурентных корректировок, инварианта `balance = SUM(ledger)` и неизменяемости. Интеграционный сценарий не запускался без PostgreSQL.
 - Добавлены `db:backup`, явно подтверждаемый `db:restore`, `maintenance:cleanup` с политикой хранения аудита и `docs/OPERATIONS.md`. Реальный backup, restore и cleanup не проверены: PostgreSQL client tools и сервер недоступны.
 - Результат проверок: `npm run test:unit` — 71 PASS; `npm test` — 71 PASS, 38 integration SKIP (нет PostgreSQL); `npm run lint`, `npm run format:check`, `npm audit` (0 vulnerabilities), `git diff --check` — PASS.
+
+## Этап 4 — тесты и покрытие
+
+- Добавлены middleware-тесты RBAC, account rate-limit тест (успешные входы не расходуют лимит), production-проверка выключенной документации и PostgreSQL RBAC-сценарий для MANAGER. Ledger сценарии покрывают идемпотентность, параллельные списания, инвариант и запрет UPDATE.
+- Добавлен `test:coverage` на базе c8 (измеряет V8 coverage без изменения production-кода).
+- `npm test`: 114 тестов, 75 PASS, 39 SKIP только PostgreSQL интеграций, 0 FAIL. `npm run test:coverage`: строки/операторы 70.28% (2160/3073), ветви 86.95% (360/414), функции 50.57% (88/174). Цель 85% строк не достигнута; особенно требуют DB-backed тестирования сервисы и скрипты.
+- `npm run lint`, `npm run format:check`, `npm audit` (0 vulnerabilities) прошли. PostgreSQL RBAC/ledger и конкурентные integration тесты не исполнялись без БД.

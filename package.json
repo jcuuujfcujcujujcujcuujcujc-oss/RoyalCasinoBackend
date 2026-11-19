@@ -28,6 +28,7 @@
     "admin:bootstrap": "node src/scripts/bootstrap-admin.js",
     "test:unit": "node --test tests/*.test.js",
     "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js",
+    "test:coverage": "c8 --all --include=src --reporter=text --reporter=lcov node --test tests/*.test.js",
     "lint": "eslint src migrations tests eslint.config.js",
     "format": "prettier --write \"src/**/*.js\" \"migrations/**/*.js\" \"tests/**/*.js\" eslint.config.js .prettierrc.json package.json README.md docs/API.md docs/laboratory-report/report.md",
     "format:check": "prettier --check \"src/**/*.js\" \"migrations/**/*.js\" \"tests/**/*.js\" eslint.config.js .prettierrc.json package.json README.md docs/API.md docs/laboratory-report/report.md"
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "c8": "^12.0.0",
     "eslint": "^10.15.0",
     "globals": "^17.14.0",
     "prettier": "^3.10.1",
